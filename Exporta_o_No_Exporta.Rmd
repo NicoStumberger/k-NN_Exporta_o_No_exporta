@@ -1,0 +1,42 @@
+---
+title: "K-NN Exporta vs No exporta"
+output: html_notebook
+date: 2020-09-15
+author: "Nicolás Stumberger"
+---
+
+Con el objetivo de aplicar el algoritmo de clasificiación denominado k-NN sobre datos reales, llevé adelante este análisis que tiene la intención de predecir si una empresa va a realizar una exportación (o no) durante el próximo año en base a variables que, puede suponerse, tienen cierta incidencia en la performance de las exportaciones de una empresa.
+
+# Indice
+1. Sobre k-NN
+2. Sobre los datos
+3. Pasos
+
+3.1. Obtención de datos  
+3.2. Exploración y preparación de datos  
+3.3. Entrenando el modelo  
+3.4. Evaluando la performance del modelo  
+3.5. Mejorando la performance del modelo  
+
+4. Conclusiones y disparadores
+
+
+# 1. Sobre el algoritmo k-NN
+
+
+# 2. Sobre los datos
+
+
+# 3. Prediciendo si una empresa exportará (o no) el próximo año con k-NN
+
+## 3.1. Obtención de datos
+
+## 3.2. Exploración y preparación de datos
+
+## 3.3. Entrenando el modelo
+
+## 3.4. Evaluando la performance del modelo
+
+## 3.5. Mejorando la performance del modelo
+
+# 4. Conclusiones y disparadores
