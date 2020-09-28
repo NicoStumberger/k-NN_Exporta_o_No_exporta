@@ -22,10 +22,24 @@ Con el objetivo de aplicar el algoritmo de clasificiación denominado k-NN sobre
 
 
 # 1. Sobre el algoritmo k-NN
+"Dios los cría y ellos se juntan" podría ser la frase que caracteriza este algoritmo, denominado k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos), que tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares. Las cosas que son parecidas, comúnmente tienen propiedades parecidas. En este caso, la hipótesis sería que los exportadores parecidos tendrán un resultado parecido durante el próximo año.
 
+Entonces, lo que hace este algoritmo es tomar observaciones sin clasificar (registros "nuevos") y les asigna la etiqueta de la clasificación de observaciones similares. Para encontrar esa similitud, se toma variables (features) disponibles.
+
+Ahora bien, ¿cómo calcula el algoritmo la cercanía entre las observaciones (entre las empresas en este caso)? Sintéticamente, utiliza un cálculo para medir distancias entre las variables de cada observación, llamado "distancia euclidiana", el cual se deduce a partir del Teorema de Pitágoras.
+
+No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay mucha información al respecto en la web), pero sí me interesa destacar un aspecto más: este algoritmo se lo describe como "lazy" (vago, peresozo), porque en realidad no produce un modelo (no se produce ninguna abstracción), sino que utiliza los mismos datos para realizar la clasificación y, por esto mismo, la posibilidad de entender cómo cada variable está relacionada con el resultado (clasificación) está bastante limitada. Por este motivo, este análisis no tendrá un resultado explicativo, sino que será únicamente predictivo.
+
+Utiliza variables numéricas únicamente, por lo que cualquier variable categórica debe convertirse a una numérica creando variables "dummy".
 
 # 2. Sobre los datos
+Origen aduana a través de una fuente privada a la cual se pudo acceder. 
 
+Los mismos están agregados a nivel mensual por empresa y anonimizados. 
+
+Las variables que se utilizaron para realizar este análisis son: ...
+
+Estas variables fueron escogidas tomando como base los datos con los que se contaba de la fuente primaria, pero limitando el número de las mismas para no excederse demasiado en la etapa de prepareción de los datos.
 
 # 3. Prediciendo si una empresa exportará (o no) el próximo año con k-NN
 
