@@ -1,5 +1,5 @@
 ---
-title: "K-NN Exporta vs No exporta"
+title: "Exporta vs No exporta con K-NN"
 output: html_notebook
 date: 2020-09-15
 author: "Nicolás Stumberger"
@@ -8,38 +8,42 @@ author: "Nicolás Stumberger"
 Con el objetivo de aplicar el algoritmo de clasificiación denominado k-NN sobre datos reales, llevé adelante este análisis que tiene la intención de predecir si una empresa va a realizar una exportación (o no) durante el próximo año en base a variables que, puede suponerse, tienen cierta incidencia en la performance de las exportaciones de una empresa.
 
 # Indice
-1. Sobre k-NN
-2. Sobre los datos
-3. Pasos
 
-3.1. Obtención de datos  
-3.2. Exploración y preparación de datos  
-3.3. Entrenando el modelo  
-3.4. Evaluando la performance del modelo  
-3.5. Mejorando la performance del modelo  
+1.  Sobre k-NN
+2.  Sobre los datos
+3.  Pasos
 
-4. Conclusiones y disparadores
+3.1. Obtención de datos\
+3.2. Exploración y preparación de datos\
+3.3. Entrenando el modelo\
+3.4. Evaluando la performance del modelo\
+3.5. Mejorando la performance del modelo
 
+4.  Conclusiones y disparadores
 
 # 1. Sobre el algoritmo k-NN
-"Dios los cría y ellos se juntan" podría ser la frase que caracteriza este algoritmo, denominado k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos), que tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares. Las cosas que son parecidas, comúnmente tienen propiedades parecidas. En este caso, la hipótesis sería que los exportadores parecidos tendrán un resultado parecido durante el próximo año.
+
+## "Dios los cría y ellos se juntan"
+
+El algoritmo k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos) tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares en otras caracterísitcas. Las cosas que son parecidas, comúnmente tienen propiedades parecidas. En este caso, la hipótesis sería que los exportadores parecidos tendrán un resultado parecido durante el próximo año. La "clasificación" es la etiqueta que queremos predecir, llamada "target feature".
 
 Entonces, lo que hace este algoritmo es tomar observaciones sin clasificar (registros "nuevos") y les asigna la etiqueta de la clasificación de observaciones similares. Para encontrar esa similitud, se toma variables (features) disponibles.
 
 Ahora bien, ¿cómo calcula el algoritmo la cercanía entre las observaciones (entre las empresas en este caso)? Sintéticamente, utiliza un cálculo para medir distancias entre las variables de cada observación, llamado "distancia euclidiana", el cual se deduce a partir del Teorema de Pitágoras.
 
-No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay mucha información al respecto en la web), pero sí me interesa destacar un aspecto más: este algoritmo se lo describe como "lazy" (vago, peresozo), porque en realidad no produce un modelo (no se produce ninguna abstracción), sino que utiliza los mismos datos para realizar la clasificación y, por esto mismo, la posibilidad de entender cómo cada variable está relacionada con el resultado (clasificación) está bastante limitada. Por este motivo, este análisis no tendrá un resultado explicativo, sino que será únicamente predictivo.
+No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay mucha información al respecto en la web), pero sí me interesa destacar un par de aspectos más. Primero, este algoritmo se lo describe como "lazy" (vago, perezoso), porque en realidad no produce un modelo (no se produce ninguna abstracción), sino que utiliza los mismos datos para realizar la clasificación y, por esto mismo, la posibilidad de entender cómo cada variable está relacionada con el resultado (clasificación) está bastante limitada. Por este motivo, este análisis no tendrá un resultado explicativo, sino que será únicamente predictivo.
 
-Utiliza variables numéricas únicamente, por lo que cualquier variable categórica debe convertirse a una numérica creando variables "dummy".
+Segundo, el algoritmo funciona únicamente con variables numéricas, por lo que cualquier variable categórica (si existiera, y en este caso existen) debe convertirse a una numérica creando variables "dummy".
 
 # 2. Sobre los datos
-Origen aduana a través de una fuente privada a la cual se pudo acceder. 
 
-Los mismos están agregados a nivel mensual por empresa y anonimizados. 
+Los datos que se utilizaron para crear el análisis vienen una fuente privada que recopila datos de aduana. A los efectos de este análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas.
 
-Las variables que se utilizaron para realizar este análisis son: ...
+Las variables que se utilizaron para realizar este análisis son:
 
-Estas variables fueron escogidas tomando como base los datos con los que se contaba de la fuente primaria, pero limitando el número de las mismas para no excederse demasiado en la etapa de prepareción de los datos.
+Estas variables fueron escogidas tomando como base los campos con los que se contaba en la fuente primaria (techo). No obstante esto, también se buscó limitar el número total de variables a utilizar con el fin de que la etapa de preparación de datos, denominada "data wrangling" (o "data carpentry") no consuma demasiado tiempo.
+
+La descripción de este análisis no incluye todo el proceso de "data carpentry" realizado. Se dice que la etapa de preparación de datos ocupa más del 80% del proceso de análisis. En este caso creo que fue cerca del 90%. Como el objetivo de este informe no es "data carpentry", consideré prescindible incluirlo y hacer foco en el tema del asunto.
 
 # 3. Prediciendo si una empresa exportará (o no) el próximo año con k-NN
 
