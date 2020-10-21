@@ -55,7 +55,14 @@ La descripción de este análisis no incluye todo el proceso de "data carpentry"
 
 # 3. Prediciendo si una empresa exportará (o no) el próximo año con k-NN
 
-## 3.1. Obtención de datos
+## 3.1. Carga de librerías
+
+```{r}
+library(tidyverse)
+
+```
+
+## 3.2. Obtención de datos
 
 Tal como se mendiona arriba, los datos fueron procesados previamente. El resultado de ese data carpentry es el dataset exportadores\_prep.RDS.
 
@@ -69,7 +76,7 @@ El dataset cuenta con un poco más de 16.000 filas, representando exportadores, 
 str(exportadores)
 ```
 
-La tabla metadatos tiene la descripción de cada campo:
+La tabla metadatos contiene la descripción de cada campo:
 
 ```{r}
 metadatos <-
@@ -79,7 +86,38 @@ metadatos <-
 metadatos
 ```
 
-## 3.2. Exploración y preparación de datos
+## 3.3. Preparación de datos
+
+La primer variable es el id del exportador. Como es un identificador único por cada exportador, no provee ninguna información útil para el modelo, por lo que lo vamos a excluir.
+
+```{r}
+exportadores_1 <- exportadores %>% 
+        select(-id)
+```
+
+La siguiente variable, target, es de particular importancia, ya que es el resultado que quiero predecir. Este campo indica si el exportador realizó o no una venta al exterior en el último año del periodo analizado, en este caso durante el año 2019.
+
+```{r}
+table(exportadores_1$target)
+```
+
+Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. EL dataset está balanceado.
+
+```{r}
+round(prop.table(table(exportadores_1$target)) * 100, digits = 1)
+```
+
+Las restantes 27 variables son numéricas, tal como el algoritmo requiere, y describen la cantidad de productos, cantidad de destinos, región del mundo a la que se exportó y montos despachados durante el rango de años estudiados.
+
+A modo ilustrativo, se observa un resumen de 3 de estos campos: cantidad de productos distintos, cantidad de países distintos y valores exportados durante uno de los años.
+
+```{r}
+summary(exportadores_1[c("ncm_5", "dest_5", "fob_5")])
+```
+
+El algoritmo k-NN es altamente dependiente de la escala de las variables de input. Al analizar esta información en detenimiento , se puede ver que los rangos de valores de las variables ncm\_5 y dest\_5 son muy diferentes de la de fob\_5. Debido a que dest\_5 varía de 0 a 97 y fob\_5 varía de 0 a 2.904.000.000, el impacto de este último va a ser mayor en el cálculo de la distancia en el algoritmo, comparado con el primero. Por este motivo, el dataset debe ser normalizado.
+
+### Normalización del dataset
 
 ## 3.3. Entrenando el modelo
 
