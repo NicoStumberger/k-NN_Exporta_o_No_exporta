@@ -119,6 +119,41 @@ El algoritmo k-NN es altamente dependiente de la escala de las variables de inpu
 
 ### Normalización del dataset
 
+Dispongo de dos alternativas para normalizar los datos:
+
+-   Normalización con Min-Max
+
+-   Normalización con Z-score (desviaciones estándar)
+
+Ambos métodos son útiles para el agoritmo. La normalización min-max convierte todos los valores a una escala de 0 a 1, comprimiendo los extremos hacia el centro, acortando el rango total. La normalización con z-score, por su parte, no tiene límites mínimos ni máximos definidos, por lo que los valores extremos no son comprimidos hacia el centro, si no que convierte la media del conjunto de valores en 0, y todos los valores se ubican por debajo o encima del 0 en función a su distancia de la media medida en desviación estándar.
+
+La decisión para utilizar una u otra forma de normalizar los datos, puede tomarse en base a los datos mismos: ¿interesa que pesen más los valores extremos o no?
+
+Se comenzará utizando la normalización min-max. Para ello creo una función que luego me permita convertir todo el dataset.
+
+```{r}
+normalize <- function(x) {
+        
+        return((x - min(x, na.rm = TRUE)) / 
+                       (max(x, na.rm = TRUE) - 
+                                min(x, na.rm = TRUE)
+                        )
+               )
+        
+}
+```
+
+Testeo que la función esté funcionando bien.
+
+```{r}
+normalize(c(1,2,3,4, NA, 5))
+normalize(c(10, 20, 30, 40, 50))
+```
+
+Ahora debo aplicar esta funcion a las 27 variables numericas del dataset La fc lapply me permite hacer eso. lapply toma una lista y aplica una fc especifica a cada elemento de la lista. Como una tabla es una lista de vectores, podemos usar lapply. Por ultimo convertimos el resultado a un dataframe.
+
+### División del dataset en training  y test
+
 ## 3.3. Entrenando el modelo
 
 ## 3.4. Evaluando la performance del modelo
