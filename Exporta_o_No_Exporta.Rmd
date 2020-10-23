@@ -58,8 +58,9 @@ La descripción de este análisis no incluye todo el proceso de "data carpentry"
 ## 3.1. Carga de librerías
 
 ```{r}
-library(tidyverse)
-
+library(tidyverse) # para manipular todos los datos
+library(class) # paquete que contiene el algoritmo knn de clasificacion
+library(gmodels) # para evaluar el modelo con crosstable
 ```
 
 ## 3.2. Obtención de datos
@@ -125,9 +126,9 @@ Dispongo de dos alternativas para normalizar los datos:
 
 -   Normalización con Z-score (desviaciones estándar)
 
-Ambos métodos son útiles para el agoritmo. La normalización min-max convierte todos los valores a una escala de 0 a 1, comprimiendo los extremos hacia el centro, acortando el rango total. La normalización con z-score, por su parte, no tiene límites mínimos ni máximos definidos, por lo que los valores extremos no son comprimidos hacia el centro, si no que convierte la media del conjunto de valores en 0, y todos los valores se ubican por debajo o encima del 0 en función a su distancia de la media medida en desviación estándar.
+Ambos métodos son útiles para el agoritmo. La normalización min-max convierte todos los valores a una escala de 0 a 1, comprimiendo los extremos hacia el centro, acortando el rango total. La normalización con z-score, por su parte, no tiene límites mínimos ni máximos definidos, por lo que los valores extremos no son comprimidos hacia el centro si no que convierte la media del conjunto de valores en 0, y todos los valores se ubican por debajo o por encima del 0 en función a su distancia de la media, medida en desviaciones estándar.
 
-La decisión para utilizar una u otra forma de normalizar los datos, puede tomarse en base a los datos mismos: ¿interesa que pesen más los valores extremos o no?
+La decisión para utilizar una u otra forma de normalizar los datos puede tomarse en base a los datos mismos: ¿interesa que pesen más los valores extremos o no?
 
 Se comenzará utizando la normalización min-max. Para ello creo una función que luego me permita convertir todo el dataset.
 
@@ -150,13 +151,138 @@ normalize(c(1,2,3,4, NA, 5))
 normalize(c(10, 20, 30, 40, 50))
 ```
 
-Ahora debo aplicar esta funcion a las 27 variables numericas del dataset La fc lapply me permite hacer eso. lapply toma una lista y aplica una fc especifica a cada elemento de la lista. Como una tabla es una lista de vectores, podemos usar lapply. Por ultimo convertimos el resultado a un dataframe.
+Ahora debo aplicar esta funcion a las 27 variables numericas del dataset. La función lapply me permite hacer eso. lapply toma una lista y aplica una función específica a cada elemento de la lista. Como una tabla es como una lista de vectores, podemos usar lapply. Por ultimo convertimos el resultado a un dataframe.
 
-### División del dataset en training  y test
+```{r}
+# Excluyo la variable target para normalizar
 
-## 3.3. Entrenando el modelo
+exportadores_n <- lapply(exportadores_1[2:28], normalize) %>%
+        as_tibble()
+
+
+```
+
+Para confirmar que se normalizaron bien, analizo el resumen estadístico de una variable.
+
+```{r}
+summary(exportadores_n$fob_5)
+```
+
+Perfecto, según lo esperado fob\_5 (exportaciones del último año de análisis sin contar el del target) tienen el rango 0-1.
+
+### División del dataset en training y test
+
+Tal como lo expresan las buenas prácticas del machine learning, vamos a separar el dataset en 2. Uno para entrenar el modelo y el otro para testearlo. La idea es que el modelo sea testeado sobre datos no vistos previamente por éste. En este caso, voy a utilizar el 80% de los registros para entrenar y el restante 20% para testear.
+
+Para dividir el dataset, voy a crear una muestra aleatoria y replicable.
+
+```{r}
+# divido exportadores_n en expo_train y expo_test
+
+# para poder replicar la mueastra aleatoria
+set.seed(123)
+
+# creo la muestra de un total de las filas del dataset, el 80%.
+train_sample <- sample(nrow(exportadores_1), 
+                       round(nrow(exportadores_1) * 0.8, 
+                             digits = 0))
+
+
+str(train_sample)
+
+# creo el set de entrenamiento en base a exportadores_n, con las filas de la muestra y el set de test sin las filas de la muestra.
+expo_train <- exportadores_n[train_sample,]
+expo_test <- exportadores_n[-train_sample,]
+
+
+```
+
+Cuando se normalizó el dataset, se excluyó la variable target. Para entrenar el algoritmo, se necesita de esta variable, por lo que aquí la guardo en un vector para train y otro para test. Además chequeo que la proporción de "export" - "no\_export" de cada división sea similar al del dataset completo.
+
+```{r}
+expo_train_labels <- exportadores_1[train_sample, 1]
+expo_test_labels <- exportadores_1[-train_sample, 1]
+
+# Acá hequeo que la proporción de "export" o "no_export" sea similar a la del dataset completo (50%-50% aprox).
+
+prop.table(table(expo_train_labels))
+
+prop.table(table(expo_test_labels))
+
+```
+
+Bien, ahora está todo listo para entrenar el modelo.
+
+## 3.4. Entrenando el modelo
+
+Para un lazy learner como k-NN no es necesario ninguna contruccion de modelo. Solo hay que guardar la data de input en un formato estructurado, para usarlo con la nueva data.
+
+La función knn() del paquete class identifica el k nearest neghbors, usando distancia Euclideana, en donde k es un numero especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los k nearest neighbors: se asigna la class de la mayoria de los vecinos y un empate se define aleatoreamente.
+
+Algunos autores establecen que el número de k a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas.
+
+```{r}
+
+sqrt(nrow(expo_train)) %>% round(digits = 0)
+```
+
+En este caso, da 114. No obstante, este numero puede ajustarse en futuras iteraciones.
+
+Ahora el algoritmo:
+
+```{r}
+# IMPORTANTE: cl DEBE ser vector, no table. Por lo tanto DEBE seleccionarse la columna!!!
+
+expo_test_pred <-
+        knn(
+                train = expo_train,
+                test = expo_test,
+                cl = expo_train_labels$target,
+                k = 114,
+                prob = TRUE
+        )
+
+```
+
+Esto devuelve un factor vector con los predicted labeles para el test
 
 ## 3.4. Evaluando la performance del modelo
+
+Hacemos un cross table especificando prop.chisq = FALSE para quitar los valores chi-square del output.
+
+```{r}
+CrossTable(# nuevamente deben ser vectores
+        x = expo_test_labels$target,
+        y = expo_test_pred,
+        prop.chisq = FALSE)
+
+```
+
+En esta tabla de arriba tenemos muchos valores. Las columnas representan las predicciones de clase y las filas las clases reales.
+
+A continuación construyo una matriz de confusión un poco más casera para que me sirva para calcular el accuracy.
+
+```{r}
+# matriz de confusión casera para calcular el accuracy
+
+confus_matrix <- table(expo_test_pred,expo_test_labels$target)
+
+confus_matrix
+```
+
+Aquí las filas son las predicciones y las columnas representan la clasificación real.
+
+Ahora creo una función para calcular el accuracy del modelo.
+
+```{r}
+# Esta función divide las predicciones correctas por el total de predicciones. Nos da el accuracy del modelo.
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+
+accuracy(confus_matrix)
+```
+
+76% de accuracy! Nada mal para ser el primer intento.
 
 ## 3.5. Mejorando la performance del modelo
 
