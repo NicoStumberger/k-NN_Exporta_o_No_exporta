@@ -118,7 +118,7 @@ summary(exportadores_1[c("ncm_5", "dest_5", "fob_5")])
 
 El algoritmo k-NN es altamente dependiente de la escala de las variables de input. Al analizar esta información en detenimiento , se puede ver que los rangos de valores de las variables ncm\_5 y dest\_5 son muy diferentes de la de fob\_5. Debido a que dest\_5 varía de 0 a 97 y fob\_5 varía de 0 a 2.904.000.000, el impacto de este último va a ser mayor en el cálculo de la distancia en el algoritmo, comparado con el primero. Por este motivo, el dataset debe ser normalizado.
 
-### Normalización del dataset
+### Normalización
 
 Dispongo de dos alternativas para normalizar los datos:
 
@@ -170,7 +170,7 @@ summary(exportadores_n$fob_5)
 
 Perfecto, según lo esperado fob\_5 (exportaciones del último año de análisis sin contar el del target) tienen el rango 0-1.
 
-### División del dataset en training y test
+### División: training y test
 
 Tal como lo expresan las buenas prácticas del machine learning, vamos a separar el dataset en 2. Uno para entrenar el modelo y el otro para testearlo. La idea es que el modelo sea testeado sobre datos no vistos previamente por éste. En este caso, voy a utilizar el 80% de los registros para entrenar y el restante 20% para testear.
 
@@ -282,8 +282,219 @@ accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
 accuracy(confus_matrix)
 ```
 
-76% de accuracy! Nada mal para ser el primer intento.
+Casi 76% de accuracy! Nada mal para ser el primer intento.
+
+```{r}
+k_alternativos <- tibble(
+        k_value = c(1:140),
+        verdad_pos = verdad_pos(k_value),
+        verdad_neg = verdad_neg(k_value),
+        falso_neg = falso_neg(k_value),
+        falso_pos = falso_pos(k_value),
+        accuracy_fc = accuracy_v(k_value)
+) %>%
+        mutate(
+                tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
+                accuracy_m = (verdad_pos + verdad_neg) / tot
+        )
+
+
+k_alternativos %>% 
+        ggplot(aes(k_value, accuracy_fc)) +
+        geom_line(group = 1) +
+        theme_minimal()
+```
 
 ## 3.5. Mejorando la performance del modelo
+
+Vamos a intentar 2 variaciones al modelo: primero, cambiando el método de normalización utilizado; segundo, probando diferentes valores de *k.*
+
+### Normalización con z-score
+
+Recordemos que la normalización de z-score, a diferencia de la min-max, no comprime los valores extremos hacia el centro y el rango va de valores negativos a positivos, convirtiendo la media en 0. En esta normalización, los outliers ponderan más en el cálculo de la distancia aplicado por el algoritmo que en la normalización anterior.
+
+```{r}
+# la función scale() se aplica directamente sobre un dataset
+
+exportadores_z <- exportadores_1 %>% 
+        select(-target) %>% 
+        scale() %>% 
+        as_tibble()
+```
+
+Para chequear que se normalizó correctamente, le doy una mirada al resumen estadístico.
+
+```{r}
+summary(exportadores_z$fob_5)
+```
+
+La media es 0 y vemos que el rango va de -0.059 a 45.603 (outlier). Un z-score menor a -3 o mayor a 3 indica un valor muy poco común. Habiendo examinado esto, aparentemente la normalización funcionó bien.
+
+Como hicimos anteriormente, ahora debemos dividir la data normalizada en train y test sets y clasificar el test utilizando el algoritmo knn(). Finalizaremos esta iteración, comparando las predicciónes con la clase real en una matriz de confusión y aplicaremos la fórmula para conocer el accuracy del modelo.
+
+```{r}
+# ya tengo creado un registro de filas de muestra, por lo que no necesito volver a hacer realizar el set.seed() y sample()
+
+# creo el set de entrenamiento en base a exportadores_z, con las filas de la muestra y el set de test sin las filas de la muestra.
+expo_train <- exportadores_z[train_sample,]
+expo_test <- exportadores_z[-train_sample,]
+expo_train_labels <- exportadores_1[train_sample, 1]
+expo_test_labels <- exportadores_1[-train_sample, 1]
+
+expo_test_pred <-
+        knn(
+                train = expo_train,
+                test = expo_test,
+                cl = expo_train_labels$target,
+                k = 114,
+                prob = TRUE
+        )
+
+confus_matrix <- table(expo_test_pred,expo_test_labels$target)
+
+confus_matrix
+
+# Esta función divide las predicciones correctas por el total de predicciones. Nos da el accuracy del modelo.
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+
+accuracy(confus_matrix)
+
+```
+
+Aparentemente, favoreciendo el peso de los outliers (manteniendo todo lo demás igual), mejora un poco el modelo: 76,52% de accuracy.
+
+### Valores alternativos de *k*
+
+```{r}
+
+(confus_matrix[1,1] + confus_matrix[2,2]) / sum(confus_matrix[1,1], confus_matrix[1,2], confus_matrix[2,1], confus_matrix[2,2]) * 100
+
+
+# función que extrae el verdader positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
+verdad_pos <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # verdadero positivo
+                       confus_matrix[1, 1]
+               })
+        
+}
+
+# Verdadero Negativo
+verdad_neg <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Verdadero Negativo
+                       confus_matrix[2, 2]
+               })
+        
+}
+
+# Falso negativo
+falso_neg <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Falso negativo
+                       confus_matrix[1, 2]
+               })
+        
+}
+
+# Falso negativo
+falso_pos <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Falso negativo
+                       confus_matrix[2, 1]
+               })
+        
+}
+
+
+# Accuracy con funcion
+accuracy_v <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # accuracy
+                       accuracy(confus_matrix) 
+               })
+        
+}
+
+
+
+
+k_alternativos <- tibble(
+        k_value = c(1:140),
+        verdad_pos = verdad_pos(k_value),
+        verdad_neg = verdad_neg(k_value),
+        falso_neg = falso_neg(k_value),
+        falso_pos = falso_pos(k_value),
+        accuracy_fc = accuracy_v(k_value)
+) %>%
+        mutate(
+                tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
+                accuracy_m = (verdad_pos + verdad_neg) / tot
+        )
+
+
+k_alternativos %>% 
+        ggplot(aes(k_value, accuracy_fc)) +
+        geom_line(group = 1) +
+        theme_minimal()
+```
+
+Iterando con diferentes valores de k, obtengo el mejor accuracy con un k igual a 13 (extraño que recomienden 114 con un dataset de 16.000...). Quizás, suceda algo diferente con la normalización min-max.
 
 # 4. Conclusiones y disparadores
