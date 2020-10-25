@@ -57,7 +57,7 @@ La descripción de este análisis no incluye todo el proceso de "data carpentry"
 
 ## 3.1. Carga de librerías
 
-```{r}
+```{r librerias, message = FALSE, warning = FALSE}
 library(tidyverse) # para manipular todos los datos
 library(class) # paquete que contiene el algoritmo knn de clasificacion
 library(gmodels) # para evaluar el modelo con crosstable
@@ -67,7 +67,7 @@ library(gmodels) # para evaluar el modelo con crosstable
 
 Tal como se mendiona arriba, los datos fueron procesados previamente. El resultado de ese data carpentry es el dataset exportadores\_prep.RDS.
 
-```{r}
+```{r carga dataset}
 exportadores <- readRDS(file = "data/exportadores_prep.RDS")
 ```
 
@@ -84,7 +84,7 @@ metadatos <-
         xlsx::read.xlsx2(file = "data/metadatos.xlsx", 
                          sheetName = "metadatos")
 
-metadatos
+knitr::kable(metadatos, caption = "Metadatos")
 ```
 
 ## 3.3. Preparación de datos
@@ -102,7 +102,7 @@ La siguiente variable, target, es de particular importancia, ya que es el result
 table(exportadores_1$target)
 ```
 
-Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. EL dataset está balanceado.
+Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. El dataset está balanceado y es bueno para el tener un *baseline*: si usáramos solo el azar para predecir si una empresa exportará o no el próximo año, conociendo esta proporción, tenemos un 50% de probabilidades de acertarle al resultado.
 
 ```{r}
 round(prop.table(table(exportadores_1$target)) * 100, digits = 1)
@@ -284,27 +284,6 @@ accuracy(confus_matrix)
 
 Casi 76% de accuracy! Nada mal para ser el primer intento.
 
-```{r}
-k_alternativos <- tibble(
-        k_value = c(1:140),
-        verdad_pos = verdad_pos(k_value),
-        verdad_neg = verdad_neg(k_value),
-        falso_neg = falso_neg(k_value),
-        falso_pos = falso_pos(k_value),
-        accuracy_fc = accuracy_v(k_value)
-) %>%
-        mutate(
-                tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
-                accuracy_m = (verdad_pos + verdad_neg) / tot
-        )
-
-
-k_alternativos %>% 
-        ggplot(aes(k_value, accuracy_fc)) +
-        geom_line(group = 1) +
-        theme_minimal()
-```
-
 ## 3.5. Mejorando la performance del modelo
 
 Vamos a intentar 2 variaciones al modelo: primero, cambiando el método de normalización utilizado; segundo, probando diferentes valores de *k.*
@@ -366,10 +345,7 @@ Aparentemente, favoreciendo el peso de los outliers (manteniendo todo lo demás 
 
 ### Valores alternativos de *k*
 
-```{r}
-
-(confus_matrix[1,1] + confus_matrix[2,2]) / sum(confus_matrix[1,1], confus_matrix[1,2], confus_matrix[2,1], confus_matrix[2,2]) * 100
-
+```{r echo = FALSE, cache = TRUE}
 
 # función que extrae el verdader positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
 verdad_pos <- function(k) {
