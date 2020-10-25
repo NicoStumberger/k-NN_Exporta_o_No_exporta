@@ -498,3 +498,29 @@ k_alternativos %>%
 Iterando con diferentes valores de k, obtengo el mejor accuracy con un k igual a 13 (extraño que recomienden 114 con un dataset de 16.000...). Quizás, suceda algo diferente con la normalización min-max.
 
 # 4. Conclusiones y disparadores
+
+Data beats alghorithm.
+
+Los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. Cuál podría ser una solución a esto?
+
+Dandole peso a los outliers mejoró el accuracy. Qué variables serán aquellas que aportan esos outliers útiles para la performance del modelo?
+
+Me extraña el valor de k que arroja el mejor accuracy. Muy diferente al recomendado.
+
+Me hubiera gustado conseguir un valor superior a 80%, pero 79% no está nada mal. Más aún cuando no hice ningún ajuste en los datos.
+
+Debería ver cómo performa en nueva data. Podría usar alguna técnica de múltiples random samples. O bien dividir el dataset en 3: uno para entrenar, otro para testear (e iterar para mejorar el accuracy) y un tercero para evaluar (una sola vez).
+
+Armar una shiny app para que un exportador pueda autotestearse, completando algunos campos.
+
+Disclaimer: evalua empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo, por no contar con atributos predictores.
+
+Este estudio fue realizado en base a conocimientos previos de diversas fuentes, pero utilizando como guía el capítulo 3 de Machine Learning with R, de Brett Lantz. Quizás las diferencias más importantes con éste (ademas del tema y los datos, por supuesto) es la utilización del metapaquete tidyverse para muchas de las operaciones, los cálculos de la matriz de confusión y la tabla de diferentes valores de k y sus resultados, en donde aplico una función vectorizada.
+
+Disparadores:
+
+Usar otro algoritmo con los mismos datos para ver qué tal performa. Quizás un decision tree.
+
+Usar otros datos con el mismo algoritmo. Hacer otro tipo del feature engeniering para obtener otro dataset a partir de los mismos datos iniciales.
+
+Usar otros datos y otro algoritmo. Combinación de ambas
