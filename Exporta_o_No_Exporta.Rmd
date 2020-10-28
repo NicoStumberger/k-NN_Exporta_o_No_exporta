@@ -1,77 +1,72 @@
 ---
-title: "Exporta vs No exporta con K-NN"
-output: html_notebook
+title: "Exportar o no exportar, ese es el dilema"
+subtitle: "Prediciendo si una empresa exportará el próximo año con el algoritmo de clasificación k-NN"
+output: 
+        html_document:
+        toc: TRUE
 date: 2020-09-15
 author: "Nicolás Stumberger"
 ---
 
-Con el objetivo de aplicar el algoritmo de clasificiación denominado k-NN sobre datos reales, llevé adelante este análisis que tiene la intención de predecir si una empresa va a realizar una exportación (o no) durante el próximo año en base a variables que, puede suponerse, tienen cierta incidencia en la performance de las exportaciones de una empresa.
+Con el propósito de comenzar a incorporar técnicas de Machine Leanring al ámbito del comercio internacional, se desarrolló un modelo predictivo de clasificación para determinar si una empresa va a exportar o no el siguiente año.
 
-# Indice
-
-1.  Sobre k-NN
-2.  Sobre los datos
-3.  Pasos
-
-3.1. Obtención de datos\
-3.2. Exploración y preparación de datos\
-3.3. Entrenando el modelo\
-3.4. Evaluando la performance del modelo\
-3.5. Mejorando la performance del modelo
-
-4.  Conclusiones y disparadores
+El algoritmo utilizado es k-NN y las variables predictoras seleccionadas son: valores exportados, número y región de los destinos, número de productos diferentes y rubro al cual pertenece la empresa, tomando como horizonte temporal los últimos 5 años.
 
 # 1. Sobre el algoritmo k-NN
 
-## "Dios los cría y ellos se juntan"
+## "Dios los cría y ellos se amontonan"
 
-El algoritmo k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos) tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares en otras caracterísitcas. Las cosas que son parecidas, comúnmente tienen propiedades parecidas. En este caso, la hipótesis sería que los exportadores parecidos tendrán un resultado parecido durante el próximo año. La "clasificación" es la etiqueta que queremos predecir, llamada "target feature".
+El algoritmo k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos) tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares en otras caracterísitcas. Se basa en la hipótesis de que las cosas que son parecidas, comúnmente tienen propiedades similares. En este caso, la hipótesis bajada al caso práctico es que los exportadores parecidos (en su comportamiento exportador durante los últimos años) tendrán un resultado similar durante el el siguiente año. La "clasificación" es la etiqueta que se desea predecir, llamada "target feature", y en este análisis será binaria: exporta o no exporta durante el siguiente año.
 
-Entonces, lo que hace este algoritmo es tomar observaciones sin clasificar (registros "nuevos") y les asigna la etiqueta de la clasificación de observaciones similares. Para encontrar esa similitud, se toma variables (features) disponibles.
+En este sentido, lo que hace este algoritmo es tomar observaciones sin clasificar (registros "nuevos") y les asigna la etiqueta de la clasificación de observaciones similares, de las que sí se cuenta con su clasificación. Para encontrar esa similitud, se toma variables (features) disponibles.
 
 Ahora bien, ¿cómo calcula el algoritmo la cercanía entre las observaciones (entre las empresas en este caso)? Sintéticamente, utiliza un cálculo para medir distancias entre las variables de cada observación, llamado "distancia euclidiana", el cual se deduce a partir del Teorema de Pitágoras.
 
-No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay mucha información al respecto en la web), pero sí me interesa destacar un par de aspectos más. Primero, este algoritmo se lo describe como "lazy" (vago, perezoso), porque en realidad no produce un modelo (no se produce ninguna abstracción), sino que utiliza los mismos datos para realizar la clasificación y, por esto mismo, la posibilidad de entender cómo cada variable está relacionada con el resultado (clasificación) está bastante limitada. Por este motivo, este análisis no tendrá un resultado explicativo, sino que será únicamente predictivo.
+No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay mucha información al respecto en la web), pero sí interesa destacar algunos aspectos que ayudarán a entender mejor el resultado. Primero, este algoritmo se lo describe como "lazy" (vago, perezoso), porque en realidad no produce un modelo (no se produce ninguna abstracción), sino que utiliza los mismos datos para realizar la clasificación y, por esto mismo, la posibilidad de entender cómo cada variable está relacionada con el resultado (clasificación) es limitada. Por este motivo, el análisis no tendrá un resultado explicativo, sino que será únicamente predictivo.
 
 Segundo, el algoritmo funciona únicamente con variables numéricas, por lo que cualquier variable categórica (si existiera, y en este caso existen) debe convertirse a una numérica creando variables "dummy" (proceso conocido como "dummy coding" o "one-hot encoding").
 
+Tercero, el algoritmo debe entrenarse y testearse sobre datos históricos para luego poder ser empleado para predecir años futuros. Se debe contar con el resultado real de la clasificación para poder determinar la exactitud del algoritmo. Por este motivo, se realiza un análisis retrospectivo, en este caso 2014-2019, utilizando el periodo 2014-2018 para las variables predictoras y el año 2019 como \*target feature\*. Pandemia a un lado, una vez entrenado y testeado el algoritmo sobre datos históricos, podría ser empleado para nuevos años (aún sin clasificar).
+
 # 2. Sobre los datos
 
-Los datos que se utilizaron para crear el análisis vienen una fuente privada que recopila datos de aduana. A los efectos de este análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas. El rango de años tomados para el análisis es 2014-2019, utilizando el último año como target feature y no se lo utiliza para el algoritmo.
+Los datos que se utilizaron para el estudio, se obtuvieron de una fuente privada que recopila datos de aduana. A los efectos del análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas. El rango de años tomados para el análisis es 2014-2019, utilizando el último año como target feature y no se lo utilizó para el entrenamiento del algoritmo.
 
-Existen límites respecto a la cantidad de variables que se pueden utilizar. La cantidad y qué variables cuenta la fuente primaria opera como uno de ellos. La otra restricción es más subjetiva y en este caso fue delimitada para que la etapa de preparación de datos, denominada "data wrangling" (o "data carpentry") no consuma demasiado tiempo, consiguiendo que este análisis nunca vea la luz.
+Existen límites respecto a la cantidad de variables que se pueden utilizar. Uno de ellos es la cantidad y qué variables cuenta la fuente primaria. La otra restricción es más subjetiva y en este caso fue delimitada para que la etapa de preparación de datos, denominada *data wrangling* (o *data carpentry*) y *feature engineering* no consuma demasiado tiempo.
 
-Entre ambos límites, se encuentra este sweet spot (en mi opinión) de utilizar las variables mencionadas. Esto no quiere decir que la selección de atributos sea azaroza. Los mismos se sustentan en ciertas hipótesis sobre su relevancia en la performance exportadora de las empresas: diversificación de cartera de productos; diversificación de destinos; regiones más estables que otras como mercados de destino; industrias más estables que otras; volúmenes exportados.
+Entre ambos límites, se encuentra el justo medio (licencia de autor) de utilizar las variables elegidas. Esto no quiere decir que la selección de atributos haya sido aleatoria, pero sí que se deja la puerta abierta a otras opiniones, modificaciones en los campos utilizados y propuestas de mejora relacionadas a la preparación de los predictores.
 
-Como resultado, las variables que se utilizaron para realizar este análisis son:
+En defensa de las variables escogidas, éstas se sustentan en ciertas hipótesis sobre su relevancia en la performance exportadora de las empresas: diversificación de cartera de productos; diversificación de destinos; regiones más estables que otras como mercados de destino; industrias más estables que otras; volúmenes exportados; entre otras.
 
-1.  Número (cantidad ) de posiciones arancelarias distintas a nivel NCM (por cada año analizado): 5 variables.
-2.  Número (cantidad) de países distintos a los que se exportó (por cada año analizado): 5 variables.
-3.  Número (cantidad) de países destino por región del mundo: Latinoamérica, Europa, Asia-Pacífico, Maghreb y Medio Oriente, Resto de África, Norteamérica, Oceanía, Comunidad de Estados Independientes y Otros: 8 variables.
-4.  Gran rubro (variables dummy): las posiciones arancelarias exportadas a qué Gran Rubro (clasificación de INDEC) pertenece: Manufacturas de Origen Agrícola, Manufacturas de Origien Industrial, Productos Primarios, Combustible y Energía: 4 variables.
-5.  Dólares FOB exportados por año: 5 variables
+Como resultado de lo antedicho, las variables que se utilizaron para realizar este análisis son:
 
-La descripción de este análisis no incluye todo el proceso de "data carpentry" realizado. Se dice que la etapa de preparación de datos ocupa más del 80% del proceso de análisis. Sin embargo, en este caso creo que fue cerca del 95%. Como el objetivo de este informe no es "data carpentry", consideré prescindible incluirlo y focalizarme en el tema del asunto.
+1.  Número (cantidad ) de posiciones arancelarias distintas a nivel NCM (por cada año analizado): 5 variables, una por año.
+2.  Número (cantidad) de países distintos a los que se exportó (por cada año analizado): 5 variables, una por año.
+3.  Número (cantidad) de países distintos por región del mundo a los que se exportó (duranto todo el periodo analizado de 5 años): Latinoamérica, Europa, Asia-Pacífico, Maghreb y Medio Oriente, Resto de África, Norteamérica, Oceanía, Comunidad de Estados Independientes y Otros: 8 variables, una por región.
+4.  Gran rubro (variables dummy) al que pertenecen las posiciones arancelarias exportadas, según la clasificación de INDEC: Manufacturas de Origen Agrícola (MOA), Manufacturas de Origien Industrial (MOI), Productos Primarios (PP), Combustible y Energía (CyE): 4 variables, una por gran rubro.
+5.  Dólares FOB exportados por cada año analizado: 5 variables, una por año.
 
-# 3. Prediciendo si una empresa exportará (o no) el próximo año con k-NN
+La descripción de este estudio no incluye todo el proceso de *data carpentry* realizado. Se suele decir que la etapa de preparación de datos ocupa más del 80% del proceso de análisis. Sin embargo, en este caso, fue cerca del 95%. Como el objetivo del informe no es describir cómo se prepararon los datos, sino predecir exportaciones, se consideró prescindible incluirlo aquí y se priorizó el desarrollo del tema del asunto.
+
+# 3. Prediciendo si una empresa va a exportar o no el siguiente año con k-NN
 
 ## 3.1. Carga de librerías
 
 ```{r librerias, message = FALSE, warning = FALSE}
-library(tidyverse) # para manipular todos los datos
+library(tidyverse) # para manipular todos los datos, graficar, etc.
 library(class) # paquete que contiene el algoritmo knn de clasificacion
 library(gmodels) # para evaluar el modelo con crosstable
 ```
 
 ## 3.2. Obtención de datos
 
-Tal como se mendiona arriba, los datos fueron procesados previamente. El resultado de ese data carpentry es el dataset exportadores\_prep.RDS.
+Tal como se mencionó arriba, los datos fueron procesados previamente. El resultado de ese *data carpentry* es el archivo exportadores\_prep.RDS.
 
 ```{r carga dataset}
 exportadores <- readRDS(file = "data/exportadores_prep.RDS")
 ```
 
-El dataset cuenta con un poco más de 16.000 filas, representando exportadores, y 29 columnas. La primera es id del exportador, la segunda es el target feature (la variable que queremos predecir) que indica si la empresa exportó o no en el último año. El resto de las variables (27 ) son los atributos que utilizaremos para predecir.
+El dataset cuenta con poco más de 16.000 filas, representando exportadores, y 29 columnas. La primera es *id* del exportador, la segunda es el *target feature* (la variable que se desea predecir) que indica si la empresa exportó o no en el último año. El resto de las variables (27 ) son los atributos que se utilizarán para predecir.
 
 ```{r}
 str(exportadores)
@@ -226,7 +221,7 @@ Algunos autores establecen que el número de k a utilizar debe ser igual a la ra
 sqrt(nrow(expo_train)) %>% round(digits = 0)
 ```
 
-En este caso, da 114. No obstante, este numero puede ajustarse en futuras iteraciones.
+En este caso, da 114. De todas maneras, este numero puede ajustarse en futuras iteraciones.
 
 Ahora el algoritmo:
 
