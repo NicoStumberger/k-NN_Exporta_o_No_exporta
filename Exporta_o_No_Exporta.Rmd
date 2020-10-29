@@ -1,6 +1,6 @@
 ---
 title: "Exportar o no exportar, ese es el dilema"
-subtitle: "Prediciendo si una empresa exportará el próximo año con el algoritmo de clasificación k-NN"
+subtitle: "Prediciendo si una empresa exportará el siguiente año con el algoritmo de clasificación k-NN"
 output: 
         html_document:
         toc: TRUE
@@ -60,7 +60,7 @@ library(gmodels) # para evaluar el modelo con crosstable
 
 ## 3.2. Obtención de datos
 
-Tal como se mencionó arriba, los datos fueron procesados previamente. El resultado de ese *data carpentry* es el archivo exportadores\_prep.RDS.
+Tal como se mencionó arriba, los datos fueron procesados previamente. El resultado de este proceso de *data carpentry* y *feature engineering* es el archivo exportadores\_prep.RDS.
 
 ```{r carga dataset}
 exportadores <- readRDS(file = "data/exportadores_prep.RDS")
@@ -68,7 +68,7 @@ exportadores <- readRDS(file = "data/exportadores_prep.RDS")
 
 El dataset cuenta con poco más de 16.000 filas, representando exportadores, y 29 columnas. La primera es *id* del exportador, la segunda es el *target feature* (la variable que se desea predecir) que indica si la empresa exportó o no en el último año. El resto de las variables (27 ) son los atributos que se utilizarán para predecir.
 
-```{r}
+```{r }
 str(exportadores)
 ```
 
@@ -80,52 +80,53 @@ metadatos <-
                          sheetName = "metadatos")
 
 knitr::kable(metadatos, caption = "Metadatos")
+
 ```
 
 ## 3.3. Preparación de datos
 
-La primer variable es el id del exportador. Como es un identificador único por cada exportador, no provee ninguna información útil para el modelo, por lo que lo vamos a excluir.
+La primer variable es el `id` del exportador. Como es un identificador único por cada exportador, no provee ninguna información útil para el modelo, por lo que se excluye.
 
 ```{r}
 exportadores_1 <- exportadores %>% 
         select(-id)
 ```
 
-La siguiente variable, target, es de particular importancia, ya que es el resultado que quiero predecir. Este campo indica si el exportador realizó o no una venta al exterior en el último año del periodo analizado, en este caso durante el año 2019.
+La siguiente variable, `target`, es de particular importancia, debido a que es el resultado que se desea predecir. Este campo indica si el exportador realizó o no una venta al exterior en el último año del periodo analizado, en este caso durante el año 2019.
 
 ```{r}
 table(exportadores_1$target)
 ```
 
-Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. El dataset está balanceado y es bueno para el tener un *baseline*: si usáramos solo el azar para predecir si una empresa exportará o no el próximo año, conociendo esta proporción, tenemos un 50% de probabilidades de acertarle al resultado.
+Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. El dataset está balanceado y esto es bueno para el tener un *baseline*: si usáramos solo el azar para predecir si una empresa exportará o no el próximo año, conociendo esta proporción, tenemos un 50% de probabilidades de acertarle al resultado. A continuación, se observa la proporción (%).
 
 ```{r}
 round(prop.table(table(exportadores_1$target)) * 100, digits = 1)
 ```
 
-Las restantes 27 variables son numéricas, tal como el algoritmo requiere, y describen la cantidad de productos, cantidad de destinos, región del mundo a la que se exportó y montos despachados durante el rango de años estudiados.
+Las restantes 27 variables son numéricas, tal como el algoritmo lo requiere, y describen la cantidad de productos, cantidad de destinos, región del mundo a la que se exportó y montos despachados durante el rango de años estudiados.
 
-A modo ilustrativo, se observa un resumen de 3 de estos campos: cantidad de productos distintos, cantidad de países distintos y valores exportados durante uno de los años.
+A modo ilustrativo, se observa un resumen estadístico de 3 de estos campos: cantidad de productos distintos (`ncm_5`), cantidad de países distintos (`dest_5`) y valores exportados (`fob_5`) durante uno de los años.
 
 ```{r}
 summary(exportadores_1[c("ncm_5", "dest_5", "fob_5")])
 ```
 
-El algoritmo k-NN es altamente dependiente de la escala de las variables de input. Al analizar esta información en detenimiento , se puede ver que los rangos de valores de las variables ncm\_5 y dest\_5 son muy diferentes de la de fob\_5. Debido a que dest\_5 varía de 0 a 97 y fob\_5 varía de 0 a 2.904.000.000, el impacto de este último va a ser mayor en el cálculo de la distancia en el algoritmo, comparado con el primero. Por este motivo, el dataset debe ser normalizado.
+El algoritmo k-NN es altamente dependiente de la escala de las variables de input. Al analizar esta información en detenimiento , se puede ver que los rangos de valores de las variables `ncm_5` y `dest_5` son muy diferentes de la de `fob_5`. Debido a que `dest_5` varía de 0 a 97 y `fob_5` varía de 0 a 2.904.000.000, el impacto de este último va a ser mayor en el cálculo de la distancia en el algoritmo, comparado con el primero. Por este motivo, el dataset debe ser normalizado.
 
 ### Normalización
 
-Dispongo de dos alternativas para normalizar los datos:
+Se presentan dos alternativas para normalizar los datos:
 
--   Normalización con Min-Max
+-   Normalización con *Min-Max*
 
--   Normalización con Z-score (desviaciones estándar)
+-   Normalización con *Z-score* (desviaciones estándar)
 
-Ambos métodos son útiles para el agoritmo. La normalización min-max convierte todos los valores a una escala de 0 a 1, comprimiendo los extremos hacia el centro, acortando el rango total. La normalización con z-score, por su parte, no tiene límites mínimos ni máximos definidos, por lo que los valores extremos no son comprimidos hacia el centro si no que convierte la media del conjunto de valores en 0, y todos los valores se ubican por debajo o por encima del 0 en función a su distancia de la media, medida en desviaciones estándar.
+Ambos métodos son útiles para el algoritmo. La normalización min-max convierte todos los valores a una escala de 0 a 1, comprimiendo los extremos hacia el centro, acortando el rango total. La normalización con *z-score*, por su parte, no tiene límites mínimos ni máximos definidos, por lo que los valores extremos no son comprimidos hacia el centro, sino que convierte la media del conjunto de valores en 0, y todos los valores se ubican por debajo o por encima del 0 en función a su distancia de la media, medida en desviaciones estándar.
 
-La decisión para utilizar una u otra forma de normalizar los datos puede tomarse en base a los datos mismos: ¿interesa que pesen más los valores extremos o no?
+La decisión para utilizar una u otra forma de normalizar los datos puede tomarse en base a los datos mismos: ¿interesa que ponderen más los valores extremos o no?
 
-Se comenzará utizando la normalización min-max. Para ello creo una función que luego me permita convertir todo el dataset.
+Primero se utilizará la normalización min-max. Para ello, se crea una función que permita convertir todo el dataset en escala normalizada.
 
 ```{r}
 normalize <- function(x) {
@@ -139,14 +140,16 @@ normalize <- function(x) {
 }
 ```
 
-Testeo que la función esté funcionando bien.
+Con las siguientes lineas se testea que la función se ejecute bien.
 
 ```{r}
 normalize(c(1,2,3,4, NA, 5))
 normalize(c(10, 20, 30, 40, 50))
 ```
 
-Ahora debo aplicar esta funcion a las 27 variables numericas del dataset. La función lapply me permite hacer eso. lapply toma una lista y aplica una función específica a cada elemento de la lista. Como una tabla es como una lista de vectores, podemos usar lapply. Por ultimo convertimos el resultado a un dataframe.
+Por lo que se observa, los valores fueron comprimidos a una escala de 0 a 1, por lo que se da por sentado que funcionó ok.
+
+A continuación, se aplica la funcion a las 27 variables numéricas del dataset. La función `lapply()` permite hacer eso. `lapply()` toma una lista y aplica una función específica a cada elemento de la lista. Como una tabla es como una lista de vectores, se puede utilizar `lapply()`. Por último, lo que hace el siguiente chunk, es convertir el resultado a un dataframe.
 
 ```{r}
 # Excluyo la variable target para normalizar
@@ -157,19 +160,19 @@ exportadores_n <- lapply(exportadores_1[2:28], normalize) %>%
 
 ```
 
-Para confirmar que se normalizaron bien, analizo el resumen estadístico de una variable.
+Para confirmar que las variables fueron normalizadas conformemente, se observa el resumen estadístico de una variable.
 
 ```{r}
 summary(exportadores_n$fob_5)
 ```
 
-Perfecto, según lo esperado fob\_5 (exportaciones del último año de análisis sin contar el del target) tienen el rango 0-1.
+Según lo esperado, `fob_5` (exportaciones del último año de análisis) posee un rango 0-1.
 
 ### División: training y test
 
-Tal como lo expresan las buenas prácticas del machine learning, vamos a separar el dataset en 2. Uno para entrenar el modelo y el otro para testearlo. La idea es que el modelo sea testeado sobre datos no vistos previamente por éste. En este caso, voy a utilizar el 80% de los registros para entrenar y el restante 20% para testear.
+Tal como lo expresan las buenas prácticas del machine learning, el dataset se dividirá en 2. Una parte se utilizará para entrenar el modelo y la otra para testearlo. La intención es que el modelo sea testeado sobre datos no vistos previamente por éste. En este caso, se empleará el 80% de los registros para entrenar y el restante 20% para testear.
 
-Para dividir el dataset, voy a crear una muestra aleatoria y replicable.
+A continuación, se crea una muestra aleatoria para realizar la división y se utiliza `set.seed()` para su replicabilidad.
 
 ```{r}
 # divido exportadores_n en expo_train y expo_test
@@ -192,7 +195,9 @@ expo_test <- exportadores_n[-train_sample,]
 
 ```
 
-Cuando se normalizó el dataset, se excluyó la variable target. Para entrenar el algoritmo, se necesita de esta variable, por lo que aquí la guardo en un vector para train y otro para test. Además chequeo que la proporción de "export" - "no\_export" de cada división sea similar al del dataset completo.
+Al normalizar el dataset, en el paso anterior, se excluyó la variable `target` . Ahora, para entrenar el algoritmo, se necesitará de esta variable para clasificar. Por este motivo, seguidamente se guarda esta variable como vector, tanto para el dataset de entrenamiento como para el de testeo.
+
+Por otro lado, se chequea que la proporción de cada clase, en cada dataset, sea similar a la del dataset completo. De esta manera, se comprobará que la muestra fue realizada correctamente.
 
 ```{r}
 expo_train_labels <- exportadores_1[train_sample, 1]
@@ -206,24 +211,24 @@ prop.table(table(expo_test_labels))
 
 ```
 
-Bien, ahora está todo listo para entrenar el modelo.
+Por lo que se observa, las proporciones de ambos datasets son semejantres y ahora está todo listo para entrenar el modelo.
 
 ## 3.4. Entrenando el modelo
 
-Para un lazy learner como k-NN no es necesario ninguna contruccion de modelo. Solo hay que guardar la data de input en un formato estructurado, para usarlo con la nueva data.
+Para un *lazy* learner como *k-NN* no es necesaria ninguna contruccion de modelo. Solo se debe guardar la data de input en un formato estructurado para usarlo con la nueva data.
 
-La función knn() del paquete class identifica el k nearest neghbors, usando distancia Euclideana, en donde k es un numero especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los k nearest neighbors: se asigna la class de la mayoria de los vecinos y un empate se define aleatoreamente.
+La función `knn()` del paquete *class* identifica el *k nearest neghbors*, usando distancia Euclideana, en donde *k* es un número especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los *k nearest neighbors*: se asigna la *class* de la mayoria de los vecinos y un empate se define aleatoreamente.
 
-Algunos autores establecen que el número de k a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas.
+Algunos autores establecen que el número de *k* a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas. En este caso, como se entrenan `nrow(expo_train)` observaciones, el *k* elegido en primer lugar, será `sqrt(nrow(expo_train)) %>% round(digits = 0)` . El siguiente chunck calcula el número de *k* en base a lo que mencionan los autores.
 
 ```{r}
 
 sqrt(nrow(expo_train)) %>% round(digits = 0)
 ```
 
-En este caso, da 114. De todas maneras, este numero puede ajustarse en futuras iteraciones.
+Este número será modificado en futuras iteraciones de este proceso para chequear que se utilice aquel que mejor performe sobre el dataset de testeo.
 
-Ahora el algoritmo:
+A continuación, el algoritmo:
 
 ```{r}
 # IMPORTANTE: cl DEBE ser vector, no table. Por lo tanto DEBE seleccionarse la columna!!!
@@ -239,11 +244,11 @@ expo_test_pred <-
 
 ```
 
-Esto devuelve un factor vector con los predicted labeles para el test
+Esto arroja como output un vector de clase factor, con los *predicted labels* para el test.
 
 ## 3.4. Evaluando la performance del modelo
 
-Hacemos un cross table especificando prop.chisq = FALSE para quitar los valores chi-square del output.
+Para evaluar el resultado del algoritmo sobre los datos, se realiza un *cross table,* seguido de una matriz de confusón a partir de la cual se calculará el *accuracy*
 
 ```{r}
 CrossTable(# nuevamente deben ser vectores
@@ -253,9 +258,7 @@ CrossTable(# nuevamente deben ser vectores
 
 ```
 
-En esta tabla de arriba tenemos muchos valores. Las columnas representan las predicciones de clase y las filas las clases reales.
-
-A continuación construyo una matriz de confusión un poco más casera para que me sirva para calcular el accuracy.
+En esta tabla de arriba las columnas representan las predicciones de clase y las filas las clases reales.
 
 ```{r}
 # matriz de confusión casera para calcular el accuracy
@@ -265,9 +268,9 @@ confus_matrix <- table(expo_test_pred,expo_test_labels$target)
 confus_matrix
 ```
 
-Aquí las filas son las predicciones y las columnas representan la clasificación real.
+Aquí las filas son las predicciones y las columnas representan la clasificación real. Como puede observarse, de `nrow(expo_test)` , se registraron 360 falsos positivos y 426, falsos negativos.
 
-Ahora creo una función para calcular el accuracy del modelo.
+A continación, se crea una función para calcular el *accuracy* general del modelo: predicciones correctas dividido por el total de predicciones.
 
 ```{r}
 # Esta función divide las predicciones correctas por el total de predicciones. Nos da el accuracy del modelo.
@@ -277,15 +280,15 @@ accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
 accuracy(confus_matrix)
 ```
 
-Casi 76% de accuracy! Nada mal para ser el primer intento.
+Casi 76% de *accuracy*! Este resultado no está nada mal para ser el primer intento.
 
 ## 3.5. Mejorando la performance del modelo
 
-Vamos a intentar 2 variaciones al modelo: primero, cambiando el método de normalización utilizado; segundo, probando diferentes valores de *k.*
+En esta sección se intentarán dos variaciones del modelo: primero, se modificará el método de normalización utilizado; segundo, intentarán diferentes valores de *k.*
 
-### Normalización con z-score
+### Normalización con *z-score*
 
-Recordemos que la normalización de z-score, a diferencia de la min-max, no comprime los valores extremos hacia el centro y el rango va de valores negativos a positivos, convirtiendo la media en 0. En esta normalización, los outliers ponderan más en el cálculo de la distancia aplicado por el algoritmo que en la normalización anterior.
+Es importante remarcar que la normalización *z-score*, a diferencia de la min-max, no comprime los valores extremos hacia el centro y el rango va de valores negativos a positivos, convirtiendo la media en 0. En esta normalización, los outliers ponderan más en el cálculo de la distancia aplicado por el algoritmo que en la normalización utilizada en la primer iteración.
 
 ```{r}
 # la función scale() se aplica directamente sobre un dataset
@@ -296,15 +299,15 @@ exportadores_z <- exportadores_1 %>%
         as_tibble()
 ```
 
-Para chequear que se normalizó correctamente, le doy una mirada al resumen estadístico.
+Para chequear que se normalizó correctamente, se observa el resumen estadístico de una de las variables.
 
 ```{r}
 summary(exportadores_z$fob_5)
 ```
 
-La media es 0 y vemos que el rango va de -0.059 a 45.603 (outlier). Un z-score menor a -3 o mayor a 3 indica un valor muy poco común. Habiendo examinado esto, aparentemente la normalización funcionó bien.
+Se observa que la media es 0 y que el rango va de -0.059 a 45.603 (outlier). Un *z-score* menor a -3 o mayor a 3 indica un valor muy poco probable. Habiendo examinado esto, aparentemente la normalización funcionó bien.
 
-Como hicimos anteriormente, ahora debemos dividir la data normalizada en train y test sets y clasificar el test utilizando el algoritmo knn(). Finalizaremos esta iteración, comparando las predicciónes con la clase real en una matriz de confusión y aplicaremos la fórmula para conocer el accuracy del modelo.
+Al igual que en el primer intento, ahora se debe dividir la data normalizada en *train* y *test sets* y clasificar el test utilizando el algoritmo `knn()`. Se finalizará esta iteración comparando las predicciónes con la clase real en una matriz de confusión y se aplicará la fórmula para conocer el accuracy del modelo, al igual a como se hizo anteriormente.
 
 ```{r}
 # ya tengo creado un registro de filas de muestra, por lo que no necesito volver a hacer realizar el set.seed() y sample()
@@ -336,9 +339,11 @@ accuracy(confus_matrix)
 
 ```
 
-Aparentemente, favoreciendo el peso de los outliers (manteniendo todo lo demás igual), mejora un poco el modelo: 76,52% de accuracy.
+Al parecer, favoreciendo el peso de los outliers (y manteniendo todo lo demás igual), mejora un poco el modelo: 76,52% de *accuracy*.
 
 ### Valores alternativos de *k*
+
+En esta sección se probarán distintos valores de *k*. Para ello, se crearán funciones que realicen todo el proceso y permitan obtener, como output, los valores de: verdaderos positivos, verdaderos negativos, falsos positivos, falsos negativos y al accuracy general del modelo. Seguidamente, se creará una tabla con todos estos resultados y se graficará la performance del modelo en función a los diferentes valores de k posibles.
 
 ```{r echo = FALSE, cache = TRUE}
 
@@ -451,7 +456,7 @@ k_alternativos <- tibble(
         verdad_pos = verdad_pos(k_value),
         verdad_neg = verdad_neg(k_value),
         falso_neg = falso_neg(k_value),
-        falso_pos = falso_pos(k_value),
+        falso_pos = fal
         accuracy_fc = accuracy_v(k_value)
 ) %>%
         mutate(
@@ -466,7 +471,7 @@ k_alternativos %>%
         theme_minimal()
 ```
 
-Iterando con diferentes valores de k, obtengo el mejor accuracy con un k igual a 13 (extraño que recomienden 114 con un dataset de 16.000...). Quizás, suceda algo diferente con la normalización min-max.
+Al iterar con diferentes valores de *k*, se observa que el mejor resultado se obtiene con un *k* igual a 13 (resulta extraño que se recomiende 114 para un dataset de este tamaño).
 
 # 4. Conclusiones y disparadores
 
