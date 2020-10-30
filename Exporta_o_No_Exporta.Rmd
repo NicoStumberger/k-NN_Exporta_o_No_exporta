@@ -12,6 +12,17 @@ Con el propósito de comenzar a incorporar técnicas de Machine Leanring al ámb
 
 El algoritmo utilizado es k-NN y las variables predictoras seleccionadas son: valores exportados, número y región de los destinos, número de productos diferentes y rubro al cual pertenece la empresa, tomando como horizonte temporal los últimos 5 años.
 
+```{r setup, include=FALSE}
+
+## By defult, show code for all chunks in the knitted document,
+## as well as the output. To override for a particular chunk
+## use echo = FALSE in its options.
+# knitr::opts_chunk$set(echo = TRUE) 
+
+## Set the default size of figures
+knitr::opts_chunk$set(fig.width=10, fig.height=6.18) 
+```
+
 # 1. Sobre el algoritmo k-NN
 
 ## "Dios los cría y ellos se amontonan"
@@ -83,6 +94,48 @@ knitr::kable(metadatos, caption = "Metadatos")
 
 ```
 
+### Un poco de EDA (Análisis Exploratorio de Datos)
+
+A continuación, y a modo ilustrativo, se grafica la dispersión de las observaciones por las variables de número de destinos en los distintos años del análisis (atributos). Los colores representan la clasificación: exporta o no exporta el último año.
+
+```{r}
+
+gran_rubro <- exportadores %>% 
+        select(21:24) %>% 
+        names()
+
+region <- exportadores %>% 
+        select(13:20) %>% 
+        names()
+
+n_dest <- exportadores %>% 
+        select(8:12) %>% 
+        names()
+
+n_ncm <- exportadores %>% 
+        select(3:7) %>% 
+        names()
+
+fob <- exportadores %>% 
+        select(25:29) %>% 
+        names()
+
+expo_long <- exportadores %>% 
+        pivot_longer(cols = 3:29, names_to = "atributo")
+
+expo_long %>%
+        filter(atributo %in% n_dest) %>% 
+        ggplot(aes(value, atributo)) +
+        geom_jitter(aes(color = target), alpha = 0.1, height = 0.35) + 
+        theme_minimal() +
+        labs(title = "Número de destinos a los que se exportó en los años anteriores al analizado",
+             x = "Cantidad de destinos")
+        
+        
+```
+
+No se alcanza a detectar en detalle, pero sí se pueden apreciar dos particularidades: primero, se observa una mayor densidad de puntos en los valores más bajos, de 0 a 10 destinos aproximadamente; segundo, se advierte una mayor proporción de la clase "export" (en rojo), en aquellas observaciones que registran un mayor número de destinos (valores altos en el eje de las x). Esto es algo que lo puede dictar el sentido común (hay más empresas con pocos mercado de exportación y pocas empresas con muchos mercados; y también más destinos, significan más chances de continuar exportando), pero es importante demostrarlo con datos.
+
 ## 3.3. Preparación de datos
 
 La primer variable es el `id` del exportador. Como es un identificador único por cada exportador, no provee ninguna información útil para el modelo, por lo que se excluye.
@@ -98,7 +151,7 @@ La siguiente variable, `target`, es de particular importancia, debido a que es e
 table(exportadores_1$target)
 ```
 
-Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. El dataset está balanceado y esto es bueno para el tener un *baseline*: si usáramos solo el azar para predecir si una empresa exportará o no el próximo año, conociendo esta proporción, tenemos un 50% de probabilidades de acertarle al resultado. A continuación, se observa la proporción (%).
+Se puede observar que de los 16 mil registros, aproximadamente la mitad realizó una exportación. El dataset está balanceado y esto es bueno para el tener un *baseline*: si usáramos solo el azar para predecir si una empresa exportará o no al siguiente año, conociendo esta proporción, tenemos un 50% de probabilidades de acertarle al resultado. A continuación, se observa la participación (%).
 
 ```{r}
 round(prop.table(table(exportadores_1$target)) * 100, digits = 1)
@@ -217,9 +270,9 @@ Por lo que se observa, las proporciones de ambos datasets son semejantres y ahor
 
 Para un *lazy* learner como *k-NN* no es necesaria ninguna contruccion de modelo. Solo se debe guardar la data de input en un formato estructurado para usarlo con la nueva data.
 
-La función `knn()` del paquete *class* identifica el *k nearest neghbors*, usando distancia Euclideana, en donde *k* es un número especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los *k nearest neighbors*: se asigna la *class* de la mayoria de los vecinos y un empate se define aleatoreamente.
+La función `knn()` del paquete *class* identifica el *k nearest neighbors*, usando distancia Euclideana, en donde *k* es un número especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los *k nearest neighbors*: se asigna la *class* de la mayoria de los vecinos y un empate se define aleatoreamente.
 
-Algunos autores establecen que el número de *k* a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas. En este caso, como se entrenan `nrow(expo_train)` observaciones, el *k* elegido en primer lugar, será `sqrt(nrow(expo_train)) %>% round(digits = 0)` . El siguiente chunck calcula el número de *k* en base a lo que mencionan los autores.
+Algunos autores establecen que el número de *k* a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas. En este caso, como se entrenan `r nrow(expo_train)` observaciones, el *k* elegido en primer lugar, será `r sqrt(nrow(expo_train)) %>% round(digits = 0)` . El siguiente chunck calcula el número de *k* en base a lo que mencionan los autores.
 
 ```{r}
 
@@ -246,7 +299,7 @@ expo_test_pred <-
 
 Esto arroja como output un vector de clase factor, con los *predicted labels* para el test.
 
-## 3.4. Evaluando la performance del modelo
+## 3.5. Evaluando la performance del modelo
 
 Para evaluar el resultado del algoritmo sobre los datos, se realiza un *cross table,* seguido de una matriz de confusón a partir de la cual se calculará el *accuracy*
 
@@ -282,7 +335,134 @@ accuracy(confus_matrix)
 
 Casi 76% de *accuracy*! Este resultado no está nada mal para ser el primer intento.
 
-## 3.5. Mejorando la performance del modelo
+```{r fc matriz de confusion, echo = FALSE, cache = TRUE}
+
+# función que extrae el verdadero positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
+verdad_pos <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # verdadero positivo
+                       confus_matrix[1, 1]
+               })
+        
+}
+
+# Verdadero Negativo
+verdad_neg <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Verdadero Negativo
+                       confus_matrix[2, 2]
+               })
+        
+}
+
+# Falso negativo
+falso_neg <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Falso negativo
+                       confus_matrix[1, 2]
+               })
+        
+}
+
+# Falso negativo
+falso_pos <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # Falso negativo
+                       confus_matrix[2, 1]
+               })
+        
+}
+
+
+# Accuracy con funcion
+accuracy_v <- function(k) {
+        sapply(k,
+               function(x) {
+                       expo_test_pred <- knn(
+                               train = expo_train,
+                               test = expo_test,
+                               cl = expo_train_labels$target,
+                               k = x,
+                               prob = TRUE
+                       )
+                       confus_matrix <-
+                               table(expo_test_pred, expo_test_labels$target)
+                       
+                       # accuracy
+                       accuracy(confus_matrix) 
+               })
+        
+}
+
+
+
+# tabla de valores alternativos para k con sus resuiltados de la matriz de confusión
+
+# k_alternativos_n <- tibble(
+#         k_value = c(1:140),
+#         verdad_pos = verdad_pos(k_value),
+#         verdad_neg = verdad_neg(k_value),
+#         falso_neg = falso_neg(k_value),
+#         falso_pos = falso_pos(k_value),
+#         accuracy_fc = accuracy_v(k_value)
+# ) %>%
+#         mutate(
+#                 tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
+#                 accuracy_m = (verdad_pos + verdad_neg) / tot
+#         )
+# 
+# saveRDS(k_alternativos_n, file = "data/k_alternativos_n.RDS")
+
+```
+
+
+
+
+## 3.6. Mejorando la performance del modelo
 
 En esta sección se intentarán dos variaciones del modelo: primero, se modificará el método de normalización utilizado; segundo, intentarán diferentes valores de *k.*
 
@@ -347,7 +527,7 @@ En esta sección se probarán distintos valores de *k*. Para ello, se crearán f
 
 ```{r echo = FALSE, cache = TRUE}
 
-# función que extrae el verdader positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
+# función que extrae el verdadero positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
 verdad_pos <- function(k) {
         sapply(k,
                function(x) {
@@ -451,27 +631,73 @@ accuracy_v <- function(k) {
 
 
 
-k_alternativos <- tibble(
-        k_value = c(1:140),
-        verdad_pos = verdad_pos(k_value),
-        verdad_neg = verdad_neg(k_value),
-        falso_neg = falso_neg(k_value),
-        falso_pos = fal
-        accuracy_fc = accuracy_v(k_value)
-) %>%
-        mutate(
-                tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
-                accuracy_m = (verdad_pos + verdad_neg) / tot
-        )
+# k_alternativos_z <- tibble(
+#         k_value = c(1:140),
+#         verdad_pos = verdad_pos(k_value),
+#         verdad_neg = verdad_neg(k_value),
+#         falso_neg = falso_neg(k_value),
+#         falso_pos = falso_pos(k_value),
+#         accuracy_fc = accuracy_v(k_value)
+# ) %>%
+#         mutate(
+#                 tot = verdad_pos + verdad_neg + falso_neg + falso_pos,
+#                 accuracy_m = (verdad_pos + verdad_neg) / tot
+#         )
+# 
+# saveRDS(k_alternativos_z, file = "data/k_alternativos_z.RDS")
 
+k_alternativos_z <- readRDS(file = "data/k_alternativos_z.RDS")
 
-k_alternativos %>% 
+k_alternativos_z
+```
+
+Al iterar con diferentes valores de *k*, se observa que el mejor resultado se obtiene con un *k* igual a 11, 12 ó 13 (resulta extraño que se recomiende 114 para un dataset de este tamaño).
+```{r}
+k_alternativos_z %>% 
         ggplot(aes(k_value, accuracy_fc)) +
         geom_line(group = 1) +
         theme_minimal()
 ```
 
-Al iterar con diferentes valores de *k*, se observa que el mejor resultado se obtiene con un *k* igual a 13 (resulta extraño que se recomiende 114 para un dataset de este tamaño).
+
+De la misma manera, se crea una tabla de valores alternativos para *k*, pero con la normalización min-max.
+
+```{r}
+k_alternativos_n <- readRDS(file = "data/k_alternativos_n.RDS")
+
+k_alternativos_n
+```
+
+Es válido realizar el mismo gráfico (con distintos valores de *k*), pero con los datos normalizados con min-max. A continuación se muestra la representación ilustrando las lineas de ambos modelos, con diferente método de normalización.
+
+```{r}
+k_alternativos_n <- k_alternativos_n %>% 
+        mutate(normalizacion = "Min-Max")
+
+
+k_alternativos_z <- k_alternativos_z %>% 
+        mutate(normalizacion = "Z-score")
+
+k_alternativos <- bind_rows(k_alternativos_n, k_alternativos_z)
+
+
+k_alternativos %>%
+        ggplot(aes(k_value, accuracy_fc)) +
+        geom_line(aes(group = normalizacion, color = normalizacion), size = 1) +
+        geom_vline(xintercept = k_alternativos$k_value[k_alternativos$accuracy_fc == max(k_alternativos$accuracy_fc)], alpha = 0.3) +
+        theme_minimal() +
+        scale_x_continuous(
+                breaks = c(11, 50, 100)
+        ) +
+        labs(
+                subtitle = "Performance general del modelo en función al valor de k con diferente método de normalización",
+                title = "¿Cuál es el mejor valor de k?",
+                x = "k",
+                y = "Accuracy"
+        )
+```
+Aquí se aprecia que los valores de *k* con los que se logra el mejor performance son coincidentes en ambos métodos de normalización y que se encuentran entre 11 y 13 (vecinos cercanos).
+
 
 # 4. Conclusiones y disparadores
 
@@ -491,7 +717,7 @@ Armar una shiny app para que un exportador pueda autotestearse, completando algu
 
 Disclaimer: evalua empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo, por no contar con atributos predictores.
 
-Este estudio fue realizado en base a conocimientos previos de diversas fuentes, pero utilizando como guía el capítulo 3 de Machine Learning with R, de Brett Lantz. Quizás las diferencias más importantes con éste (ademas del tema y los datos, por supuesto) es la utilización del metapaquete tidyverse para muchas de las operaciones, los cálculos de la matriz de confusión y la tabla de diferentes valores de k y sus resultados, en donde aplico una función vectorizada.
+Este estudio fue realizado en base a conocimientos previos de diversas fuentes, pero utilizando como guía el capítulo 3 de Machine Learning with R, de Brett Lantz. Quizás las diferencias más importantes con éste (además del tema elegido -exportadores- y los datos, por supuesto) es la utilización del metapaquete tidyverse para muchas de las operaciones, los cálculos de la matriz de confusión y la tabla de diferentes valores de k y sus resultados, en donde aplico una función vectorizada.
 
 Disparadores:
 
