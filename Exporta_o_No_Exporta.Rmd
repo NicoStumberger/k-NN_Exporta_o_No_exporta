@@ -23,7 +23,7 @@ El algoritmo utilizado es k-NN y las variables predictoras seleccionadas son: va
 knitr::opts_chunk$set(fig.width=10, fig.height=6.18) 
 ```
 
-# 1. Sobre el algoritmo k-NN
+# Sobre el algoritmo k-NN
 
 ## "Dios los cría y ellos se amontonan"
 
@@ -39,7 +39,7 @@ Segundo, el algoritmo funciona únicamente con variables numéricas, por lo que 
 
 Tercero, el algoritmo debe entrenarse y testearse sobre datos históricos para luego poder ser empleado para predecir años futuros. Se debe contar con el resultado real de la clasificación para poder determinar la exactitud del algoritmo. Por este motivo, se realiza un análisis retrospectivo, en este caso 2014-2019, utilizando el periodo 2014-2018 para las variables predictoras y el año 2019 como \*target feature\*. Pandemia a un lado, una vez entrenado y testeado el algoritmo sobre datos históricos, podría ser empleado para nuevos años (aún sin clasificar).
 
-# 2. Sobre los datos
+# Sobre los datos
 
 Los datos que se utilizaron para el estudio, se obtuvieron de una fuente privada que recopila datos de aduana. A los efectos del análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas. El rango de años tomados para el análisis es 2014-2019, utilizando el último año como target feature y no se lo utilizó para el entrenamiento del algoritmo.
 
@@ -59,9 +59,9 @@ Como resultado de lo antedicho, las variables que se utilizaron para realizar es
 
 La descripción de este estudio no incluye todo el proceso de *data carpentry* realizado. Se suele decir que la etapa de preparación de datos ocupa más del 80% del proceso de análisis. Sin embargo, en este caso, fue cerca del 95%. Como el objetivo del informe no es describir cómo se prepararon los datos, sino predecir exportaciones, se consideró prescindible incluirlo aquí y se priorizó el desarrollo del tema del asunto.
 
-# 3. Prediciendo si una empresa va a exportar o no el siguiente año con k-NN
+# Prediciendo si una empresa va a exportar o no el siguiente año con k-NN
 
-## 3.1. Carga de librerías
+## Carga de librerías
 
 ```{r librerias, message = FALSE, warning = FALSE}
 library(tidyverse) # para manipular todos los datos, graficar, etc.
@@ -69,7 +69,7 @@ library(class) # paquete que contiene el algoritmo knn de clasificacion
 library(gmodels) # para evaluar el modelo con crosstable
 ```
 
-## 3.2. Obtención de datos
+## Obtención de datos
 
 Tal como se mencionó arriba, los datos fueron procesados previamente. El resultado de este proceso de *data carpentry* y *feature engineering* es el archivo exportadores\_prep.RDS.
 
@@ -129,14 +129,16 @@ expo_long %>%
         geom_jitter(aes(color = target), alpha = 0.1, height = 0.35) + 
         theme_minimal() +
         labs(title = "Número de destinos a los que se exportó en los años anteriores al analizado",
-             x = "Cantidad de destinos")
+             subtitle = "Cada punto representa una empresa exportadora y el color determina si realizó una exportación al sexto año.",
+             x = "Cantidad de destinos",
+             y = "Atribito")
         
         
 ```
 
 No se alcanza a detectar en detalle, pero sí se pueden apreciar dos particularidades: primero, se observa una mayor densidad de puntos en los valores más bajos, de 0 a 10 destinos aproximadamente; segundo, se advierte una mayor proporción de la clase "export" (en rojo), en aquellas observaciones que registran un mayor número de destinos (valores altos en el eje de las x). Esto es algo que lo puede dictar el sentido común (hay más empresas con pocos mercado de exportación y pocas empresas con muchos mercados; y también más destinos, significan más chances de continuar exportando), pero es importante demostrarlo con datos.
 
-## 3.3. Preparación de datos
+## Preparación de datos
 
 La primer variable es el `id` del exportador. Como es un identificador único por cada exportador, no provee ninguna información útil para el modelo, por lo que se excluye.
 
@@ -202,7 +204,7 @@ normalize(c(10, 20, 30, 40, 50))
 
 Por lo que se observa, los valores fueron comprimidos a una escala de 0 a 1, por lo que se da por sentado que funcionó ok.
 
-A continuación, se aplica la funcion a las 27 variables numéricas del dataset. La función `lapply()` permite hacer eso. `lapply()` toma una lista y aplica una función específica a cada elemento de la lista. Como una tabla es como una lista de vectores, se puede utilizar `lapply()`. Por último, lo que hace el siguiente chunk, es convertir el resultado a un dataframe.
+A continuación, se aplica la funcion a las 27 variables numéricas del dataset. La función `lapply()` permite hacer eso. `lapply()` toma una lista y aplica una función específica a cada elemento de la lista. Como una tabla es como una lista de vectores, se puede utilizar `lapply()`. Por último, lo que hace el siguiente *chunk*, es convertir el resultado a un dataframe.
 
 ```{r}
 # Excluyo la variable target para normalizar
@@ -266,13 +268,13 @@ prop.table(table(expo_test_labels))
 
 Por lo que se observa, las proporciones de ambos datasets son semejantres y ahora está todo listo para entrenar el modelo.
 
-## 3.4. Entrenando el modelo
+## Entrenando el modelo
 
 Para un *lazy* learner como *k-NN* no es necesaria ninguna contruccion de modelo. Solo se debe guardar la data de input en un formato estructurado para usarlo con la nueva data.
 
 La función `knn()` del paquete *class* identifica el *k nearest neighbors*, usando distancia Euclideana, en donde *k* es un número especificado por el usuario y representa el número de vecinos a usar para decidir la clase de cada nuevo registro. El test clasifica mediante un voto entre los *k nearest neighbors*: se asigna la *class* de la mayoria de los vecinos y un empate se define aleatoreamente.
 
-Algunos autores establecen que el número de *k* a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas. En este caso, como se entrenan `r nrow(expo_train)` observaciones, el *k* elegido en primer lugar, será `r sqrt(nrow(expo_train)) %>% round(digits = 0)` . El siguiente chunck calcula el número de *k* en base a lo que mencionan los autores.
+Algunos autores establecen que el número de *k* a utilizar debe ser igual a la raíz cuadrada del total de observaciones entrenadas. En este caso, como se entrenan `r nrow(expo_train)` observaciones, el *k* elegido en primer lugar, será `r sqrt(nrow(expo_train)) %>% round(digits = 0)` . El siguiente *chunck* calcula el número de *k* en base a lo que mencionan los autores.
 
 ```{r}
 
@@ -299,7 +301,7 @@ expo_test_pred <-
 
 Esto arroja como output un vector de clase factor, con los *predicted labels* para el test.
 
-## 3.5. Evaluando la performance del modelo
+## Evaluando la performance del modelo
 
 Para evaluar el resultado del algoritmo sobre los datos, se realiza un *cross table,* seguido de una matriz de confusón a partir de la cual se calculará el *accuracy*
 
@@ -335,7 +337,7 @@ accuracy(confus_matrix)
 
 Casi 76% de *accuracy*! Este resultado no está nada mal para ser el primer intento.
 
-```{r fc matriz de confusion, echo = FALSE, cache = TRUE}
+```{r fc matriz de confusion, echo = FALSE}
 
 # función que extrae el verdadero positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
 verdad_pos <- function(k) {
@@ -462,7 +464,7 @@ accuracy_v <- function(k) {
 
 
 
-## 3.6. Mejorando la performance del modelo
+## Mejorando la performance del modelo
 
 En esta sección se intentarán dos variaciones del modelo: primero, se modificará el método de normalización utilizado; segundo, intentarán diferentes valores de *k.*
 
@@ -523,9 +525,9 @@ Al parecer, favoreciendo el peso de los outliers (y manteniendo todo lo demás i
 
 ### Valores alternativos de *k*
 
-En esta sección se probarán distintos valores de *k*. Para ello, se crearán funciones que realicen todo el proceso y permitan obtener, como output, los valores de: verdaderos positivos, verdaderos negativos, falsos positivos, falsos negativos y al accuracy general del modelo. Seguidamente, se creará una tabla con todos estos resultados y se graficará la performance del modelo en función a los diferentes valores de k posibles.
+En esta sección se probarán distintos valores de *k*. Para ello, se crearán funciones que realicen todo el proceso y permitan obtener, como *output*, los valores de: verdaderos positivos, verdaderos negativos, falsos positivos, falsos negativos y al *accuracy* general del modelo. Seguidamente, se creará una tabla con todos estos resultados y se graficará la performance del modelo en función a los diferentes valores de *k* posibles.
 
-```{r echo = FALSE, cache = TRUE}
+```{r echo = FALSE}
 
 # función que extrae el verdadero positivo de la matriz de confusión, hecha a partir del knn con un vector de valores de k
 verdad_pos <- function(k) {
@@ -646,12 +648,15 @@ accuracy_v <- function(k) {
 # 
 # saveRDS(k_alternativos_z, file = "data/k_alternativos_z.RDS")
 
-k_alternativos_z <- readRDS(file = "data/k_alternativos_z.RDS")
+k_alternativos_z <- readRDS(file = "data/k_alternativos_z.RDS") %>% 
+        select(-accuracy_m)
 
 k_alternativos_z
 ```
 
-Al iterar con diferentes valores de *k*, se observa que el mejor resultado se obtiene con un *k* igual a 11, 12 ó 13 (resulta extraño que se recomiende 114 para un dataset de este tamaño).
+Al iterar con diferentes valores de *k*, se observa que el mejor resultado se obtiene con un *k* igual a 11, 12 ó 13, con un *accuracy* de 79.22%. En otras palabras, este modelo (en promedio) logra predecir correctamente el resultado de 8 de cada 10 empresas que dispongan de estos datos y supera en 30 puntos porcentuales al *baseline* con el que se cuenta (50%).
+
+Un aspecto que extraña del resultado es que la mejor perrformance se logró utilizando un número muy inferior al recomendado para un dataset de estas dimensiones: 11 en vez de 114.
 ```{r}
 k_alternativos_z %>% 
         ggplot(aes(k_value, accuracy_fc)) +
@@ -660,15 +665,16 @@ k_alternativos_z %>%
 ```
 
 
-De la misma manera, se crea una tabla de valores alternativos para *k*, pero con la normalización min-max.
+De la misma manera, se crea una tabla de valores alternativos para *k*, pero con la normalización min-max, para constatar que su performance es inferior con cualquier número de vecinos utilizados.
 
 ```{r}
-k_alternativos_n <- readRDS(file = "data/k_alternativos_n.RDS")
+k_alternativos_n <- readRDS(file = "data/k_alternativos_n.RDS") %>% 
+        select(-accuracy_m)
 
 k_alternativos_n
 ```
 
-Es válido realizar el mismo gráfico (con distintos valores de *k*), pero con los datos normalizados con min-max. A continuación se muestra la representación ilustrando las lineas de ambos modelos, con diferente método de normalización.
+A través de un gráfico, se puede apreciar mejor el desempeño de ambos modelos, por lo que a continuación se recrea el mismo, adicionando los datos normalizados con min-max.
 
 ```{r}
 k_alternativos_n <- k_alternativos_n %>% 
@@ -684,38 +690,47 @@ k_alternativos <- bind_rows(k_alternativos_n, k_alternativos_z)
 k_alternativos %>%
         ggplot(aes(k_value, accuracy_fc)) +
         geom_line(aes(group = normalizacion, color = normalizacion), size = 1) +
-        geom_vline(xintercept = k_alternativos$k_value[k_alternativos$accuracy_fc == max(k_alternativos$accuracy_fc)], alpha = 0.3) +
+        geom_vline(xintercept = 11, alpha = 0.3) +
         theme_minimal() +
+        guides(color = guide_legend(title = "Normalización")) +
         scale_x_continuous(
                 breaks = c(11, 50, 100)
         ) +
         labs(
                 subtitle = "Performance general del modelo en función al valor de k con diferente método de normalización",
-                title = "¿Cuál es el mejor valor de k?",
+                title = "¿Cuántos vecinos pueden votar?",
                 x = "k",
                 y = "Accuracy"
         )
 ```
-Aquí se aprecia que los valores de *k* con los que se logra el mejor performance son coincidentes en ambos métodos de normalización y que se encuentran entre 11 y 13 (vecinos cercanos).
+Aquí se observa que los valores de *k* con los que se logra el mejor performance son coincidentes en ambos métodos de normalización y que se encuentran entre 11 y 13 (vecinos cercanos).
+
+# Conclusiones y disparadores
+
+El modelo desarrollado predice correctamente 8 de cada 10 observaciones. Ante la incertidubre sobre la continuidad exportadora de una empresa durante el siguiente año, la primer conclusión a resaltar sobre el estudio es que, a partir de los datos y variables utilizadas, se logró un accuracy de 79.22%: 8 de cada 10 exportadores fueron correctamente clasificados.
 
 
-# 4. Conclusiones y disparadores
+
+
+
 
 Data beats alghorithm.
 
-Los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. Cuál podría ser una solución a esto?
 
-Dandole peso a los outliers mejoró el accuracy. Qué variables serán aquellas que aportan esos outliers útiles para la performance del modelo?
+
+Otorgándole peso a los outliers mejoró el accuracy. Qué variables serán aquellas que aportan esos outliers útiles para la performance del modelo?
 
 Me extraña el valor de k que arroja el mejor accuracy. Muy diferente al recomendado.
 
-Me hubiera gustado conseguir un valor superior a 80%, pero 79% no está nada mal. Más aún cuando no hice ningún ajuste en los datos.
 
 Debería ver cómo performa en nueva data. Podría usar alguna técnica de múltiples random samples. O bien dividir el dataset en 3: uno para entrenar, otro para testear (e iterar para mejorar el accuracy) y un tercero para evaluar (una sola vez).
 
-Armar una shiny app para que un exportador pueda autotestearse, completando algunos campos.
 
-Disclaimer: evalua empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo, por no contar con atributos predictores.
+Disclaimer: 
+evalua empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo, por no contar con atributos predictores.
+
+Los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. Cuál podría ser una solución a esto?
+
 
 Este estudio fue realizado en base a conocimientos previos de diversas fuentes, pero utilizando como guía el capítulo 3 de Machine Learning with R, de Brett Lantz. Quizás las diferencias más importantes con éste (además del tema elegido -exportadores- y los datos, por supuesto) es la utilización del metapaquete tidyverse para muchas de las operaciones, los cálculos de la matriz de confusión y la tabla de diferentes valores de k y sus resultados, en donde aplico una función vectorizada.
 
@@ -726,3 +741,6 @@ Usar otro algoritmo con los mismos datos para ver qué tal performa. Quizás un 
 Usar otros datos con el mismo algoritmo. Hacer otro tipo del feature engeniering para obtener otro dataset a partir de los mismos datos iniciales.
 
 Usar otros datos y otro algoritmo. Combinación de ambas
+
+Armar una shiny app para que un exportador pueda autotestearse, completando algunos campos.
+
