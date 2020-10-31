@@ -709,17 +709,25 @@ Aquí se observa que los valores de *k* con los que se logra el mejor performanc
 
 # Conclusiones y disparadores
 
-El modelo desarrollado predice correctamente 8 de cada 10 observaciones. Ante la incertidubre sobre la continuidad exportadora de una empresa durante el siguiente año, la primer conclusión a resaltar sobre el estudio es que, a partir de los datos y variables utilizadas, se logró un accuracy de 79.22%: 8 de cada 10 exportadores fueron correctamente clasificados.
+El modelo desarrollado predice correctamente 8 de cada 10 observaciones. Ante la incertidubre sobre la continuidad exportadora de una empresa durante el siguiente año, la primer conclusión a resaltar sobre el estudio es que, a partir de los datos y variables utilizadas, se logró un accuracy de 79.22%: 8 de cada 10 exportadores fueron acertadamente clasificados. Este valor es considerablemente superior al 50% de base con el que se contaba.
 
-El modelo no explica qué variables son las que más inciden en el resultado. ...
+El modelo no explica qué variables son las que más inciden en el resultado. Como ya se ha aclarado al comienzo, una de las debilidades del algoritmo k-NN es que no produce un modelo, propiamente dicho, por lo que no es posible entender cómo los atributos se relacionan con el resultado. 
 
-Sin embarto, el modelo puede ser útil para algunos actores involucrados en el comercio exterior argentino. ...
+Sin embargo, el modelo sí puede predecir (a pesar de que el cómo es una caja negra) y puede llegar a ser de utilidad para algunos actores involucrados en el comercio exterior argentino que, desde la perspectiva de su negocio o misión, les resulta conveniente identificar anticipadamente si una empresa logrará exportar o no, por ejemplo, para ofrecer sus servicios.
 
-Del estudio nacen algunas incógnitas y oportunidades de mejoras que pueden merecer una mayor investigación. ...
+El estudio parte de algunos supuestos y, a partir del mismo, nacen algunas incógnitas y oportunidades de mejoras que pueden merecer un análisis más profundo. En primer lugar, *data beats algorithm*: la calidad del modelo es impactado por la calidad, cantidad y variedad de los datos utilizados para construirlo. A continuación se sugieren algunas alternativas a los data empleada.
 
-A pesar de todo lo antedicho, deben aclararse algunas máximas de la ciencia de datos en general y que aplican a este análisis. ... 
+Para empezar, se pueden crear diferentes variables (*feature engineering): quizás ampliando o reduciendo el número de regiones de destino; ampliando la sectorización de las empresas a un nivel más desagregado; reduciendo el horizonte temporal a 3 años; entre otros. 
 
-Data beats alghorithm.
+Otra opción es cambiar totalmente la fuente utilizada. Según se ha visto, el análisis evalúa empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo por no contar con atributos predictores. Para solucionar este inconveniente, se deben utilizar otras variables, es decir, cambiar los datos que se utilizaron para el mismo. ¿Qué otra fuente de información con datos de empresas argentinas (exportadoras y no exportadoras) podría llegar a ser predictivamente útil? ¿Qué nuevas variables podrían predecir si una empresa exportará o no al siguiente año?
+
+Por último, una tercer alternativa es utilizar las mismas variables, pero aumentando la cantidad de años utilizados. Cabe recordar que los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, se debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. 
+
+Por otra parte, con respecto al modelo utilizado, ...
+
+¿es k-NN el mejor algoritmo para predecir si exporta una empresa el siguiente año? Como ya se ha aclarado, este algoritmo es útil para clasificar cuando las relaciones entre los atributos y la clase son numerosas, complejas y difíciles de entender. Quizás no sea éste el caso ejemplar. Muchas veces, es clara la relación entre el volumen exportado, cantidad de destinos a los que se exporta, etc., con el resultado al siguiente año. ¿Sería interesante desarrollar un *decision tree* con esta misma data?
+
+
 
 
 
@@ -731,21 +739,7 @@ Me extraña el valor de k que arroja el mejor accuracy. Muy diferente al recomen
 Debería ver cómo performa en nueva data. Podría usar alguna técnica de múltiples random samples. O bien dividir el dataset en 3: uno para entrenar, otro para testear (e iterar para mejorar el accuracy) y un tercero para evaluar (una sola vez).
 
 
-Disclaimer: 
-evalua empresas con historial exportador. Aquella empresa que nunca exportó, no puede predecirse según este modelo, por no contar con atributos predictores.
-
-Los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. Cuál podría ser una solución a esto?
-
-
-
-
 Disparadores:
-
-Usar otro algoritmo con los mismos datos para ver qué tal performa. Quizás un decision tree.
-
-Usar otros datos con el mismo algoritmo. Hacer otro tipo del feature engeniering para obtener otro dataset a partir de los mismos datos iniciales.
-
-Usar otros datos y otro algoritmo. Combinación de ambas
 
 Armar una shiny app para que un exportador pueda autotestearse, completando algunos campos.
 
