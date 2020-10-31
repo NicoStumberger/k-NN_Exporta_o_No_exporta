@@ -12,6 +12,8 @@ Con el propósito de comenzar a incorporar técnicas de Machine Leanring al ámb
 
 El algoritmo utilizado es k-NN y las variables predictoras seleccionadas son: valores exportados, número y región de los destinos, número de productos diferentes y rubro al cual pertenece la empresa, tomando como horizonte temporal los últimos 5 años.
 
+Este estudio no es un *paper* académico, por lo que no se reparará en detallar las citas a las fuentes consultas. Sin embargo, resulta oportuno destacar que se utilizó como guía el capítulo 3 de *Machine Learning with R*, de Brett Lantz (2019).
+
 ```{r setup, include=FALSE}
 
 ## By defult, show code for all chunks in the knitted document,
@@ -709,10 +711,13 @@ Aquí se observa que los valores de *k* con los que se logra el mejor performanc
 
 El modelo desarrollado predice correctamente 8 de cada 10 observaciones. Ante la incertidubre sobre la continuidad exportadora de una empresa durante el siguiente año, la primer conclusión a resaltar sobre el estudio es que, a partir de los datos y variables utilizadas, se logró un accuracy de 79.22%: 8 de cada 10 exportadores fueron correctamente clasificados.
 
+El modelo no explica qué variables son las que más inciden en el resultado. ...
 
+Sin embarto, el modelo puede ser útil para algunos actores involucrados en el comercio exterior argentino. ...
 
+Del estudio nacen algunas incógnitas y oportunidades de mejoras que pueden merecer una mayor investigación. ...
 
-
+A pesar de todo lo antedicho, deben aclararse algunas máximas de la ciencia de datos en general y que aplican a este análisis. ... 
 
 Data beats alghorithm.
 
@@ -732,7 +737,7 @@ evalua empresas con historial exportador. Aquella empresa que nunca exportó, no
 Los datos a partir de los cuales se realizó el estudio son específicamente de 2014 a 2019, en donde este último solo se lo utilizó como clase a predecir. Para que sea replicable en otros años, debería crear un dataset que no tenga únicamente este periodo de años. El lapso analizado puede esconder alguna tendencia propia del mismo que imposibilite la replicabilidad para otros (futuros) años. Cuál podría ser una solución a esto?
 
 
-Este estudio fue realizado en base a conocimientos previos de diversas fuentes, pero utilizando como guía el capítulo 3 de Machine Learning with R, de Brett Lantz. Quizás las diferencias más importantes con éste (además del tema elegido -exportadores- y los datos, por supuesto) es la utilización del metapaquete tidyverse para muchas de las operaciones, los cálculos de la matriz de confusión y la tabla de diferentes valores de k y sus resultados, en donde aplico una función vectorizada.
+
 
 Disparadores:
 
