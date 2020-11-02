@@ -1,11 +1,12 @@
 ---
 title: "Exportar o no exportar, ese es el dilema"
-subtitle: "Prediciendo si una empresa exportará el siguiente año con el algoritmo de clasificación k-NN"
-output: 
-        html_document:
-        toc: TRUE
-date: 2020-09-15
 author: "Nicolás Stumberger"
+date: '2020-11-02'
+output: 
+        html_notebook:
+                toc: TRUE
+subtitle: Cómo predecir si una empresa exportará el siguiente año con el algoritmo
+  de clasificación k-NN
 ---
 
 # Introducción
@@ -63,7 +64,7 @@ Como resultado de lo antedicho, las variables que se utilizaron para realizar es
 
 La descripción de este estudio no incluye todo el proceso de *data carpentry* realizado. Se suele decir que la etapa de preparación de datos ocupa más del 80% del proceso de análisis. Sin embargo, en este caso, fue cerca del 95%. Como el objetivo del informe no es describir cómo se prepararon los datos, sino predecir exportaciones, se consideró prescindible incluirlo aquí y se priorizó el desarrollo del tema del asunto.
 
-# Prediciendo si una empresa va a exportar o no el siguiente año con k-NN
+# Prediciendo si una empresa va a exportar el siguiente año con k-NN
 
 ## Carga de librerías
 
@@ -665,7 +666,9 @@ Un aspecto que extraña del resultado es que la mejor perrformance se logró uti
 k_alternativos_z %>% 
         ggplot(aes(k_value, accuracy_fc)) +
         geom_line(group = 1) +
-        theme_minimal()
+        theme_minimal() +
+        labs(x = "k (número de vecinos cercanos)",
+             y = "Accuracy")
 ```
 
 
@@ -731,4 +734,29 @@ Por otra parte, se proponen mejoras en el algoritmo utilizado. Un modelo simple 
 El análisis no explica qué variables son las que más inciden en el resultado. Como ya se ha aclarado al comienzo, una de las debilidades del algoritmo k-NN es que no produce un modelo, propiamente dicho, por lo que no es posible entender cómo los atributos se relacionan con el resultado. Para tener un mayor poder explicativo, debería utilizar otro tipo de algoritmo (*desicion tree*, por ejemplo).
 
 No obstante lo anterior, el estudio puede llegar a ser de utilidad para algunos actores involucrados en el comercio exterior argentino que, desde la perspectiva de su negocio o misión, les resulta conveniente identificar anticipadamente si una empresa logrará exportar o no con el objetivo de ofrecer sus servicios. Una empresa de servicios asociados a la exportación, por ejemplo, podría ser más eficaz si enfoca sus recursos comunicacionales en aquellas empresas que tengan más probabilidades de exportar al siguiente año, debido a que son potenciales clientes. Una agencia de promoción de exportaciónes (nacional o provincial), cuya misión es fomentar las exportaciones de su territorio, por su parte, podría redoblar sus esfuerzos en aquellas empresas con bajas chances de exportar al siguiente año para que, a pesar de ello, logren hacerlo.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
