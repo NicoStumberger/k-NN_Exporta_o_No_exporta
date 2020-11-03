@@ -5,6 +5,8 @@ date: '2020-11-02'
 output: 
         html_notebook:
                 toc: TRUE
+                number_sections: TRUE
+                toc_float: TRUE
 subtitle: Cómo predecir si una empresa exportará el siguiente año con el algoritmo
   de clasificación k-NN
 ---
@@ -72,6 +74,7 @@ La descripción de este estudio no incluye todo el proceso de *data carpentry* r
 library(tidyverse) # para manipular todos los datos, graficar, etc.
 library(class) # paquete que contiene el algoritmo knn de clasificacion
 library(gmodels) # para evaluar el modelo con crosstable
+library(plotly)
 ```
 
 ## Obtención de datos
@@ -669,6 +672,7 @@ k_alternativos_z %>%
         theme_minimal() +
         labs(x = "k (número de vecinos cercanos)",
              y = "Accuracy")
+
 ```
 
 
