@@ -1,5 +1,5 @@
 ---
-title: "Exportar o no exportar, ese es el dilema"
+title: "Exporta o no exporta, ¿ese es el dilema?"
 author: "Nicolás Stumberger"
 date: '2020-11-02'
 output: 
@@ -7,24 +7,20 @@ output:
                 toc: TRUE
                 number_sections: TRUE
                 toc_float: TRUE
+                code_folding: hide
 subtitle: Cómo predecir si una empresa exportará el siguiente año con el algoritmo
   de clasificación k-NN
 ---
 
 # Introducción
 
-Con el propósito de comenzar a incorporar técnicas de Machine Leanring al ámbito del comercio internacional, se desarrolla un modelo predictivo de clasificación para determinar si una empresa va a exportar o no el siguiente año.
+El presente análisis tiene como objetivo responder a la pregunta del subtítulo: ¿Cómo predecir si una empresa exportará el siguiente año con el algoritmo de clasificación k-NN? Este objetivo sirve, a su vez, a un propósito mayor, que es el de aportar técnicas del campo del aprendizaje automático al ámbito del comercio internacional, que sea útil tanto para el sector público como para el privado.
 
-El algoritmo utilizado es k-NN y las variables predictoras seleccionadas son: valores exportados, número y región de los destinos, número de productos diferentes y rubro al cual pertenece la empresa, tomando como horizonte temporal los últimos 5 años.
+Con este fin, se desarrolla un modelo predictivo de clasificación, utilizando el algoritmo k-NN y los datos utilizados para el mismo se ordenan en las siguientes variables generales: valores exportados, número y región de los destinos, número de productos diferentes y rubro al cual pertenece la empresa, tomando como horizonte temporal los últimos 6 años (2014-2019).
 
 Este estudio no es un *paper* académico, por lo que no se reparará en detallar las citas a las fuentes consultadas. Sin embargo, resulta oportuno destacar que se utilizó como guía el capítulo 3 de *Machine Learning with R*, de Brett Lantz (2019).
 
 ```{r setup, include=FALSE}
-
-## By defult, show code for all chunks in the knitted document,
-## as well as the output. To override for a particular chunk
-## use echo = FALSE in its options.
-# knitr::opts_chunk$set(echo = TRUE) 
 
 ## Set the default size of figures
 knitr::opts_chunk$set(fig.width=10, fig.height=6.18) 
@@ -34,7 +30,7 @@ knitr::opts_chunk$set(fig.width=10, fig.height=6.18)
 
 ## "Dios los cría y ellos se amontonan"
 
-El algoritmo k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos) tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares en otras caracterísitcas. Se basa en la hipótesis de que las cosas que son parecidas, comúnmente tienen propiedades similares. En este caso, la hipótesis bajada al caso práctico es que los exportadores parecidos (en su comportamiento exportador durante los últimos años) tendrán un resultado similar durante el el siguiente año. La "clasificación" es la etiqueta que se desea predecir, llamada "target feature", y en este análisis será binaria: exporta o no exporta durante el siguiente año.
+El algoritmo k-NN, por su siglas en inglés (k Nearest Neighbords: k Vecinos Cercanos) tiene por objetivo clasificar datos y colocarlos en la misma categoría de la de los "vecinos cercanos", por ser similares en otras caracterísitcas. Se basa en la hipótesis de que las cosas que son parecidas en algunos aspectos, comúnmente también lo son en otros. En este caso, la hipótesis bajada al caso práctico es que los exportadores parecidos entre sí (en su comportamiento exportador durante los últimos años) tendrán un resultado similar durante el siguiente año. La "clasificación" es la etiqueta que se desea predecir, llamada "target feature", y en este análisis será binaria: "exporta" o "no exporta" durante el siguiente año.
 
 En este sentido, lo que hace este algoritmo es tomar observaciones sin clasificar (registros "nuevos") y les asigna la etiqueta de la clasificación de observaciones similares, de las que sí se cuenta con su clasificación. Para encontrar esa similitud, se toma variables (features) disponibles.
 
@@ -44,17 +40,15 @@ No es foco de este análisis entrar en detalles sobre el algoritmo (ya que hay m
 
 Segundo, el algoritmo funciona únicamente con variables numéricas, por lo que cualquier variable categórica (si existiera, y en este caso existen) debe convertirse a una numérica creando variables "dummy" (proceso conocido como "dummy coding" o "one-hot encoding").
 
-Tercero, el algoritmo debe entrenarse y testearse sobre datos históricos para luego poder ser empleado para predecir años futuros. Se debe contar con el resultado real de la clasificación para poder determinar la exactitud del algoritmo. Por este motivo, se realiza un análisis retrospectivo, en este caso 2014-2019, utilizando el periodo 2014-2018 para las variables predictoras y el año 2019 como \*target feature\*. Pandemia a un lado, una vez entrenado y testeado el algoritmo sobre datos históricos, podría ser empleado para nuevos años (aún sin clasificar).
+Tercero, el algoritmo debe entrenarse y testearse sobre datos históricos para luego poder ser empleado para predecir años futuros. Se debe contar con el resultado real de la clasificación para poder determinar la exactitud del algoritmo. Por este motivo, se realiza un análisis retrospectivo, en este caso 2014-2019, utilizando el periodo 2014-2018 para las variables predictoras y el año 2019 como \*target feature\*. Una vez entrenado y testeado el algoritmo sobre datos históricos, podría ser empleado para nuevos años (aún sin clasificar).
 
 # Sobre los datos
 
-Los datos que se utilizaron para el estudio, se obtuvieron de una fuente privada que recopila datos de aduana. A los efectos del análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas. El rango de años tomados para el análisis es 2014-2019, utilizando el último año como target feature y no se lo utilizó para el entrenamiento del algoritmo.
+Los datos que se utilizaron para el estudio, se obtuvieron de una fuente privada que recopila datos de aduana. A los efectos del análisis, las observaciones se agregaron a nivel anual por empresa. Estas últimas fueron anonimizadas. El rango de años tomados para el análisis es 2014-2019, utilizando el último año como *target feature* y no se lo utilizó para el entrenamiento del algoritmo.
 
-Existen límites respecto a la cantidad de variables que se pueden utilizar. Uno de ellos es la cantidad y qué variables cuenta la fuente primaria. La otra restricción es más subjetiva y en este caso fue delimitada para que la etapa de preparación de datos, denominada *data wrangling* (o *data carpentry*) y *feature engineering* no consuma demasiado tiempo.
+Existen limitantes a la cantidad de variables que se pueden utilizar. Uno de ellos es la cantidad y qué variables cuenta la fuente primaria. La otra restricción, más subjetiva, es el tiempo y en este caso fue delimitado para que la etapa de preparación de datos, denominada *data wrangling* (o *data carpentry*) y *feature engineering* no se extienda demasiado y poder lograr un *MVP* (mínimo producto viable) en el corto plazo.
 
-Entre ambos límites, se encuentra el justo medio (licencia de autor) de utilizar las variables elegidas. Esto no quiere decir que la selección de atributos haya sido aleatoria, pero sí que se deja la puerta abierta a otras opiniones, modificaciones en los campos utilizados y propuestas de mejora relacionadas a la preparación de los predictores.
-
-En defensa de las variables escogidas, éstas se sustentan en ciertas hipótesis sobre su relevancia en la performance exportadora de las empresas: diversificación de cartera de productos; diversificación de destinos; regiones más estables que otras como mercados de destino; industrias más estables que otras; volúmenes exportados; entre otras.
+Esto no quiere decir que la selección de atributos haya sido aleatoria en pos de la celeridad. Por el contrario, las variables escogidas se sustentan en ciertas hipótesis sobre su correlación y potencial causalidad con la performance exportadora de las empresas: diversificación de cartera de productos; diversificación de destinos; regiones más estables que otras como mercados de destino; industrias más estables que otras; volúmenes exportados; entre otras. Sin embargo, sí se abre la discusión para permitir comentarios, sugerencias o modificaciones en los campos utilizados que tengan la intención de enriquecer el estudio.
 
 Como resultado de lo antedicho, las variables que se utilizaron para realizar este análisis son:
 
@@ -331,7 +325,7 @@ confus_matrix <- table(expo_test_pred,expo_test_labels$target)
 confus_matrix
 ```
 
-Aquí las filas son las predicciones y las columnas representan la clasificación real. Como puede observarse, de `nrow(expo_test)` , se registraron 360 falsos positivos y 426, falsos negativos.
+Aquí las filas son las predicciones y las columnas representan la clasificación real. Como puede observarse, de `r nrow(expo_test)` predicciones, se registraron 360 falsos positivos y 426, falsos negativos.
 
 A continación, se crea una función para calcular el *accuracy* general del modelo: predicciones correctas dividido por el total de predicciones.
 
@@ -676,7 +670,7 @@ k_alternativos_z %>%
 ```
 
 
-De la misma manera, se crea una tabla de valores alternativos para *k*, pero con la normalización min-max, para constatar que su performance es inferior con cualquier número de vecinos utilizados.
+Tal como se hizo con anterioridad, se crea una tabla de valores alternativos para *k*, pero con la normalización min-max, para constatar que su performance es inferior con cualquier número de vecinos utilizados.
 
 ```{r}
 k_alternativos_n <- readRDS(file = "data/k_alternativos_n.RDS") %>% 
@@ -718,7 +712,7 @@ Aquí se observa que los valores de *k* con los que se logra el mejor performanc
 
 # Conclusiones
 
-Para concluir, el objetivo de desarrollar un modelo que permita predecir si una empresa va a exportar el siguiente año fue cumplido, con un accuracy de 79%. Existen y se enumeran algunas alternativas para mejorar este resultado en nuevas iteraciones, realizando modificaciones en los datos y/o en el algoritmo empleado. El análisis no tiene poder explicativo, pero sí predictivo y puede ser de utilidad para algunos actores del comercio expterior argentino.
+El objetivo de desarrollar un modelo que permita predecir si una empresa va a exportar el siguiente año fue cumplido, con un accuracy de 79%. Existen y se enumeran algunas alternativas para mejorar este resultado en nuevas iteraciones, realizando modificaciones en los datos y/o en el algoritmo empleado. El análisis no tiene poder explicativo, pero sí predictivo y puede ser de utilidad para algunos actores del comercio exterior argentino.
 
 ## Resultado
 El modelo desarrollado predice correctamente 8 de cada 10 observaciones. Ante la incertidubre sobre la continuidad exportadora de una empresa durante el siguiente año, la primer conclusión a resaltar sobre el estudio es que, a partir de los datos y variables utilizadas, se logró un accuracy de 79.22%: 8 de cada 10 exportadores fueron acertadamente clasificados. Este valor es considerablemente superior al 50% de base con el que se contaba.
